@@ -21,7 +21,7 @@ export default function HomePage() {
             <div className="mx-auto max-w-3xl text-center">
               <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
                 Premium Dijital Ürünler
-                <span className="block text-accent">Geliştiriciler İçin</span>
+                <span className="block text-accent">Geliştiriciler İçinnn</span>
               </h1>
               <p className="mt-6 text-pretty text-lg text-muted-foreground">
                 Yüksek kaliteli şablonlar, boilerplate&apos;ler ve araçlar. Modern teknolojiler, 
