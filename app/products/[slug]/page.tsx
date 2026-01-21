@@ -2,31 +2,31 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { products, getProductBySlug } from "@/lib/products"
-import { 
-  ArrowLeft, 
-  Check, 
-  Star, 
-  Download, 
-  Calendar, 
-  Tag,
-  ChevronLeft,
-  ChevronRight
+import { getAllProducts, getProductBySlug } from "@/lib/products"
+import {
+  ArrowLeft,
+  Check,
+  Star,
+  Download,
+  Calendar,
+  Tag
 } from "lucide-react"
 import { ProductScreenshots } from "./product-screenshots"
 import { PurchaseButton } from "./purchase-button"
 
+// Build sırasında statik sayfaları oluşturmak için tüm ürünleri çekiyoruz
 export async function generateStaticParams() {
+  const products = await getAllProducts()
   return products.map((product) => ({
     slug: product.slug,
   }))
 }
 
+// Meta verileri (SEO başlıkları vb.) oluşturuyoruz
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const product = getProductBySlug(slug)
+  const product = await getProductBySlug(slug)
 
   if (!product) {
     return { title: "Ürün Bulunamadı" }
@@ -40,7 +40,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const product = getProductBySlug(slug)
+
+  // Veritabanından ürünü çekiyoruz (await önemli)
+  const product = await getProductBySlug(slug)
 
   if (!product) {
     notFound()
@@ -72,8 +74,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
             {/* Screenshots */}
             <div>
-              <ProductScreenshots 
-                screenshots={product.screenshots} 
+              <ProductScreenshots
+                screenshots={product.screenshots}
                 productName={product.name}
                 category={product.category}
               />

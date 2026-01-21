@@ -2,12 +2,14 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { Button } from "@/components/ui/button"
-import { products, getAllCategories } from "@/lib/products"
+import { getAllProducts, getAllCategories } from "@/lib/products"
 import { ArrowRight, Code2, Zap, Shield, HeartHandshake } from "lucide-react"
 import Link from "next/link"
 
-export default function HomePage() {
-  const categories = getAllCategories()
+export default async function HomePage() {
+  // Verileri veritabanından asenkron olarak çekiyoruz
+  const products = await getAllProducts()
+  const categories = await getAllCategories()
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -21,10 +23,10 @@ export default function HomePage() {
             <div className="mx-auto max-w-3xl text-center">
               <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
                 Premium Dijital Ürünler
-                <span className="block text-accent">Geliştiriciler İçinnn</span>
+                <span className="block text-accent">Geliştiriciler İçin</span>
               </h1>
               <p className="mt-6 text-pretty text-lg text-muted-foreground">
-                Yüksek kaliteli şablonlar, boilerplate&apos;ler ve araçlar. Modern teknolojiler, 
+                Yüksek kaliteli şablonlar, boilerplate&apos;ler ve araçlar. Modern teknolojiler,
                 temiz kod ve kapsamlı dokümantasyon ile projelerinizi hızlandırın.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -127,12 +129,12 @@ export default function HomePage() {
                 NPC Engineering Hakkında
               </h2>
               <p className="mt-6 text-pretty text-muted-foreground">
-                Biz, yazılım geliştiricilerin işini kolaylaştırmak için çalışan bir ekibiz. 
-                Yılların deneyimini yüksek kaliteli dijital ürünlere dönüştürüyor, 
+                Biz, yazılım geliştiricilerin işini kolaylaştırmak için çalışan bir ekibiz.
+                Yılların deneyimini yüksek kaliteli dijital ürünlere dönüştürüyor,
                 modern teknolojilerle çalışan şablonlar, araçlar ve bileşenler üretiyoruz.
               </p>
               <p className="mt-4 text-pretty text-muted-foreground">
-                Her ürünümüz kapsamlı test edilmiş, dokümante edilmiş ve production-ready olarak sunulmaktadır. 
+                Her ürünümüz kapsamlı test edilmiş, dokümante edilmiş ve production-ready olarak sunulmaktadır.
                 Amacımız, projelerinizi daha hızlı tamamlamanıza yardımcı olmak.
               </p>
               <div className="mt-10 flex justify-center gap-8">
