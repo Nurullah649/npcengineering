@@ -48,9 +48,25 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
 
       const data = await response.json()
 
-      // 2. Gelen HTML varsa sayfayı Shopier'e çevir
+      // 2. Gelen HTML varsa sayfayı Shopier'e çevir ve OTOMATİK GÖNDER
       if (data.html) {
+        // HTML içeriğini sayfaya bas
         document.documentElement.innerHTML = data.html
+
+        // --- DÜZELTME BURADA ---
+        // React scriptleri çalıştırmadığı için formu bulup biz gönderiyoruz.
+        // Shopier formunun ID'si genelde 'shopier_payment_form' olur.
+        const form = document.getElementById("shopier_payment_form") as HTMLFormElement
+
+        if (form) {
+          form.submit()
+        } else {
+          // ID ile bulunamazsa sayfadaki ilk formu bulup gönder (Yedek plan)
+          const firstForm = document.querySelector("form")
+          if (firstForm) firstForm.submit()
+        }
+        // -----------------------
+
       } else {
         alert(data.error || "Ödeme sistemi yanıt vermedi.")
         setIsLoading(false)

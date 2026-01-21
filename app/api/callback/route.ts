@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Not: Bazı kütüphane versiyonlarında callback() içine secret'ı manuel vermek gerekebilir,
     // gerekmiyorsa sadece shopier.callback(body) yeterlidir.
     // Kullandığınız 'shopier-api' paketine göre burası 'shopier.callback(body, ...)' olabilir.
-    
+
     // shopier-api paketinin standart kullanımında genellikle:
     // const isVerified = shopier.checkSignature(body, process.env.SHOPIER_API_SECRET);
     // şeklindedir ancak sizin library wrapper'ınızda 'callback' metodu varsa onu kullanın.
