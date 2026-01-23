@@ -1,16 +1,49 @@
 "use client"
 
 import React from "react"
-
 import Link from "next/link"
-import { useState } from "react"
-import { usePathname } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { Menu, X, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [loading, setLoading] = useState(true)
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Auth state listener
+  useEffect(() => {
+    // Get initial user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+    router.refresh()
+  }
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     // Eğer ana sayfadaysak, doğrudan scroll yap
@@ -47,15 +80,15 @@ export function Header() {
           <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Ana Sayfa
           </Link>
-          <Link 
-            href="/#products" 
+          <Link
+            href="/#products"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             onClick={(e) => scrollToSection(e, "products")}
           >
             Ürünler
           </Link>
-          <Link 
-            href="/#about" 
+          <Link
+            href="/#about"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             onClick={(e) => scrollToSection(e, "about")}
           >
@@ -63,12 +96,43 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="hidden md:block">
-          <Button asChild>
-            <Link href="/#products" onClick={(e) => scrollToSection(e, "products")}>
-              Ürünleri İncele
-            </Link>
-          </Button>
+        {/* Desktop Auth Buttons */}
+        <div className="hidden items-center gap-3 md:flex">
+          {loading ? (
+            <div className="h-9 w-20 animate-pulse rounded-md bg-muted" />
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="max-w-[100px] truncate">
+                    {user.email?.split("@")[0]}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="cursor-pointer">
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Çıkış Yap
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">Giriş Yap</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/register">Kayıt Ol</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -111,12 +175,48 @@ export function Header() {
             >
               Hakkımızda
             </Link>
-            <div className="pt-2">
-              <Button asChild className="w-full">
-                <Link href="/#products" onClick={(e) => scrollToSection(e, "products")}>
-                  Ürünleri İncele
-                </Link>
-              </Button>
+
+            {/* Mobile Auth Section */}
+            <div className="border-t border-border pt-4 mt-4">
+              {loading ? (
+                <div className="h-10 animate-pulse rounded-md bg-muted" />
+              ) : user ? (
+                <div className="space-y-2">
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    {user.email}
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    className="block rounded-lg px-3 py-2 text-base text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleSignOut()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-base text-destructive transition-colors hover:bg-secondary"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Çıkış Yap
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                      Giriş Yap
+                    </Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                      Kayıt Ol
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

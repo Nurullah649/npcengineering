@@ -33,7 +33,10 @@ import {
 const formSchema = z.object({
   fullName: z.string().min(2, 'Ad Soyad en az 2 karakter olmalı'),
   email: z.string().email('Geçerli bir email adresi giriniz'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalı'),
+  password: z.string()
+    .min(8, 'Şifre en az 8 karakter olmalı')
+    .regex(/[A-Z]/, 'Şifre en az bir büyük harf içermeli')
+    .regex(/[0-9]/, 'Şifre en az bir rakam içermeli'),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Şifreler eşleşmiyor",
