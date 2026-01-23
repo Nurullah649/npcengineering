@@ -65,6 +65,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        '/admin/:path*',
+        // '/admin/:path*', // Middleware kontrolünü geçici olarak devre dışı bırakıyoruz
     ],
 }
