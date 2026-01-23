@@ -70,8 +70,7 @@ export default function LoginPage() {
 
       if (!redirectTo) {
         // Redirect yoksa role göre varsayılan sayfaya git
-        const isAdmin = data.user?.user_metadata?.role === 'admin' ||
-          data.user?.email?.endsWith('@npcengineering.com');
+        const isAdmin = data.user?.user_metadata?.role === 'admin';
 
         redirectTo = isAdmin ? '/admin' : '/dashboard';
       }

@@ -59,18 +59,22 @@ export default function AdminLayout({
 
     useEffect(() => {
         const checkAuth = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
+            const user = session?.user
 
             if (!user) {
+                console.log('Admin Layout: No user found, redirecting to login')
                 router.push('/login')
                 return
             }
 
-            // Admin kontrolü
-            const adminCheck = user.user_metadata?.role === 'admin' ||
-                user.email?.endsWith('@npcengineering.com')
+            // Admin kontrolü - Sadece metadata kontrolü
+            const adminCheck = user.user_metadata?.role === 'admin'
+
+            console.log('Admin check result:', adminCheck, 'Email:', user.email, 'Role:', user.user_metadata?.role)
 
             if (!adminCheck) {
+                console.log('Admin Layout: Not admin, redirecting to dashboard')
                 router.push('/dashboard')
                 return
             }
