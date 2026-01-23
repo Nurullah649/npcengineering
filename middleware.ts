@@ -50,8 +50,22 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // Check if user has admin role (from user metadata)
-        const isAdmin = user.user_metadata?.role === 'admin' || user.email?.endsWith('@npcengineering.com')
+        // Check if user has admin role (from profiles table)
+        let isAdmin = user.user_metadata?.role === 'admin'
+
+        if (!isAdmin) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            isAdmin = profile?.role === 'admin'
+        }
+
+        if (!isAdmin && user.email?.endsWith('@npcengineering.com')) {
+            isAdmin = true
+        }
 
         if (!isAdmin) {
             const url = request.nextUrl.clone()
@@ -65,6 +79,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        // '/admin/:path*', // Middleware kontrolünü geçici olarak devre dışı bırakıyoruz
+        '/admin/:path*',
     ],
 }

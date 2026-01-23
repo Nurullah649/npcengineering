@@ -69,9 +69,14 @@ export default function LoginPage() {
       let redirectTo = searchParams.get('redirect');
 
       if (!redirectTo) {
-        // Redirect yoksa role göre varsayılan sayfaya git
-        const isAdmin = data.user?.user_metadata?.role === 'admin';
+        // Profil tablosundan rolü kontrol et
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user?.id)
+          .single();
 
+        const isAdmin = profile?.role === 'admin';
         redirectTo = isAdmin ? '/admin' : '/dashboard';
       }
 
