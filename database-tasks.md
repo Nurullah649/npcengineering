@@ -226,3 +226,22 @@ CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 | İndeksler | ⬜ |
 
 **Durumları güncellerken:** ⬜ → ✅
+
+---
+
+## 5. Profiles Tablosu Adres Sütunları (Dashboard için)
+
+- [ ] Profiles tablosuna adres sütunları ekle
+
+```sql
+-- Telefon ve adres bilgileri için yeni sütunlar
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address_line1 TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address_line2 TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS district TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS postal_code TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS tc_kimlik TEXT;
+```
+
+Bu SQL'i Supabase Dashboard → SQL Editor'da çalıştırın.
