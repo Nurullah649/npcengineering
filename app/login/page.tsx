@@ -58,17 +58,22 @@ export default function LoginPage() {
 
       if (error) {
         toast.error('Giriş başarısız: ' + error.message);
+        setIsLoading(false);
         return;
       }
 
       toast.success('Başarıyla giriş yapıldı!');
-      router.push('/dashboard'); // Başarılı olunca panele yönlendir
-      router.refresh();
+
+      // URL'den redirect parametresini al veya dashboard'a git
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
+
+      // Hard navigation ile yönlendir (session'ın yüklenmesi için)
+      window.location.href = redirectTo;
 
     } catch (error) {
       toast.error('Beklenmedik bir hata oluştu.');
       console.error(error);
-    } finally {
       setIsLoading(false);
     }
   }
