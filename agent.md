@@ -1,119 +1,65 @@
-# NPC Engineering - Güvenlik İyileştirmeleri ve UI Düzeltme Planı
+# NPC Engineering - Proje Plan ve Görev Takibi
 
-Bu belge, NPC Engineering projesinde tespit edilen güvenlik açıklarını kapatmak ve eksik UI bileşenlerini (Giriş/Kayıt butonları) entegre etmek için oluşturulmuş görev listesidir.
-
----
-
-## 🚨 AŞAMA 1: Kritik Güvenlik Altyapısı (Hemen Uygulanmalı)
-
-### 1.1. Environment Variable Validation (Çevre Değişkeni Doğrulama)
-
-**Hedef:** Uygulama başlarken kritik değişkenlerin varlığını kontrol etmek.
-
-- [x] `zod` kütüphanesini kullanarak `lib/env.ts` dosyası oluşturuldu.
-- [x] `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SHOPIER_API_KEY`, `SHOPIER_API_SECRET` değişkenleri zorunlu kılındı.
-- [x] `next.config.mjs` içinde bu dosyayı import ederek build/start anında kontrol sağla.
-
-### 1.2. Middleware & Route Protection (Sunucu Taraflı Koruma)
-
-**Hedef:** `/admin` ve `/dashboard` rotalarını sunucu tarafında korumak.
-
-- [x] Kök dizinde `middleware.ts` dosyası oluşturuldu.
-- [x] `@supabase/ssr` kullanılarak session kontrolü sağlandı.
-- [x] `/admin/*` rotasına erişen kullanıcının role bilgisi kontrol ediliyor. Admin değilse `/dashboard`'a yönlendiriliyor.
-- [x] `/dashboard/*` rotasına erişen kullanıcının oturum açtığı doğrulanıyor. Açık değilse `/login`'e yönlendiriliyor.
-
-### 1.3. Güvenlik Header'ları (Security Headers)
-
-**Hedef:** XSS, Clickjacking ve diğer saldırıları engellemek.
-
-- [x] `next.config.mjs` dosyası güncellendi.
-- [x] Aşağıdaki header'lar eklendi:
-  - `X-Frame-Options: DENY`
-  - `X-Content-Type-Options: nosniff`
-  - `Strict-Transport-Security`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `X-XSS-Protection: 1; mode=block`
-  - `Permissions-Policy`
+Bu belge, NPC Engineering projesinde yapılan ve yapılacak tüm değişiklikleri takip etmek için oluşturulmuştur.
 
 ---
 
-## 🔴 AŞAMA 2: API ve Veri Güvenliği
+## ✅ TAMAMLANAN İŞLER
 
-### 2.1. Shopier Callback Güvenliği
+### Güvenlik Altyapısı
+- [x] `lib/env.ts` - Environment variable validation (zod ile)
+- [x] `middleware.ts` - Route protection (/admin, /dashboard)
+- [x] `next.config.mjs` - Security headers
+- [x] `app/api/callback/route.ts` - Rate limiting (10/dk)
 
-**Hedef:** `app/api/callback/route.ts` dosyasını sertleştirmek.
+### Auth & UI
+- [x] `components/header.tsx` - Giriş/Kayıt butonları, kullanıcı dropdown menüsü
+- [x] `app/login/page.tsx` - Şifre validasyonu (8+ karakter)
+- [x] `app/register/page.tsx` - Şifre validasyonu (8+ karakter, büyük harf, rakam)
+- [x] `app/products/[slug]/purchase-button.tsx` - Giriş yapmadan satın alma engeli + TL fiyat formatı
+- [x] `app/products/[slug]/page.tsx` - Fiyatlar ₺ formatında
+- [x] `app/auth/callback/route.ts` - Email onay callback
+- [x] `app/auth/confirm/page.tsx` - Email onay sayfası
 
-- [x] **Rate Limiting:** IP tabanlı rate limit mekanizması eklendi (10 istek/dakika).
-- [x] **Signature Validation:** Shopier'den gelen signature doğrulaması try-catch blokları ile sarmalandı ve başarısız denemeler detaylı loglanıyor.
-- [ ] **IP Kontrolü (Opsiyonel):** Mümkünse Shopier IP aralıklarını kontrol et.
+### Dashboard Sistemi
+- [x] `app/dashboard/layout.tsx` - Sidebar menülü layout
+- [x] `app/dashboard/page.tsx` - Ana sayfa (istatistikler)
+- [x] `app/dashboard/products/page.tsx` - Satın alınan ürünler
+- [x] `app/dashboard/orders/page.tsx` - Sipariş geçmişi
+- [x] `app/dashboard/settings/page.tsx` - Profil ayarları
+- [x] `app/dashboard/settings/password/page.tsx` - Şifre değiştirme
+- [x] `app/dashboard/settings/billing/page.tsx` - Fatura adresi
 
-### 2.2. Supabase RLS (Row Level Security) Politikaları
-
-**Hedef:** Veritabanına doğrudan erişimi kısıtlamak.
-
-- [ ] SQL Editör veya Migration dosyası ile `profiles`, `orders` tabloları için RLS'i etkinleştir (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`).
-- [ ] **Policy Örnekleri:**
-  - Kullanıcılar sadece kendi profillerini görebilir/düzenleyebilir.
-  - Adminler her şeyi görebilir.
-  - Anonim kullanıcılar sadece `products` tablosunu (public) okuyabilir.
-
-### 2.3. XSS ve Input Sanitization
-
-**Hedef:** Kullanıcı girdilerini temizlemek.
-
-- [ ] `app/admin/page.tsx` ve diğer form alanlarında kullanıcıdan alınan verileri render ederken React'in varsayılan korumasına güven, ancak `dangerouslySetInnerHTML` kullanımından kaçın.
-- [ ] Form validasyonu için `zod` şemaları oluştur ve hem client hem server tarafında uygula.
-
----
-
-## 🟡 AŞAMA 3: UI/UX Düzeltmeleri (Kullanıcı Paneli)
-
-### 3.1. Header Component Güncellemesi
-
-**Sorun:** Ana sayfada "Giriş Yap" / "Kayıt Ol" butonları veya kullanıcı menüsü görünmüyor.
-
-**Dosya:** `components/header.tsx`
-
-**Görevler:**
-- [x] Header bileşenini "Client Component" olarak işaretlendi (`use client`).
-- [x] Supabase `auth.getUser()` ve `onAuthStateChange` ile kullanıcının giriş durumu dinleniyor.
-- [x] **Durum: Giriş Yapılmamışsa:**
-  - Sağ üst köşeye "Giriş Yap" (`variant="ghost"`) ve "Kayıt Ol" (`variant="default"`) butonları eklendi.
-- [x] **Durum: Giriş Yapılmışsa:**
-  - Kullanıcı dropdown menüsü render ediliyor.
-- [x] Mobilde (Hamburger menü içinde) de bu linkler görünüyor.
-
-### 3.2. Dashboard ve Auth Sayfaları
-
-- [x] `app/login/page.tsx` ve `app/register/page.tsx` sayfalarında şifre karmaşıklığı kontrolü eklendi (Min 8 karakter, büyük harf ve rakam zorunluluğu).
-- [ ] Başarılı giriş/kayıt sonrası yönlendirmelerin (`router.push('/dashboard')`) doğru çalıştığını test et.
+### Paket Güncellemeleri
+- [x] `@supabase/ssr` paketi eklendi
+- [x] `npm audit` çalıştırıldı (1 moderate lodash açığı var)
 
 ---
 
-## 🟢 AŞAMA 4: Bakım ve İzleme
+## 📋 YAPILACAKLAR
 
-### 4.0. Satın Alma Güvenliği (YENİ)
+### Veritabanı (Supabase Dashboard'dan)
+- [x] RLS politikaları (profiles, orders, products)
+- [x] Admin rol atama
+- [x] Test kullanıcıları oluşturma
+- [x] Profiles tablosuna adres sütunları
+- [ ] İndeksler (performans)
+- [ ] Error logs tablosu (opsiyonel)
+- [ ] Profiles trigger (otomatik profil oluşturma)
 
-**Hedef:** Giriş yapmadan ürün satın alınmasını engellemek ve fiyatları TL olarak göstermek.
-
-- [x] `purchase-button.tsx` dosyasında auth kontrolü eklendi - kullanıcı giriş yapmamışsa "Satın Almak İçin Giriş Yapın" butonu gösteriliyor.
-- [x] Fiyatlar TL (₺) formatında gösterilecek şekilde düzenlendi (`Intl.NumberFormat` kullanılarak).
-- [x] Ürün detay sayfasında fiyatlar $ yerine ₺ olarak gösterilecek şekilde güncellendi.
-
-### 4.1. Logging
-
-- [ ] Kritik hatalar (Ödeme hataları, Auth hataları) için bir loglama servisi (Sentry vb.) veya veritabanında bir `error_logs` tablosu kur.
-
-### 4.2. Dependency Security
-
-- [x] `npm audit` çalıştırıldı: 1 moderate lodash güvenlik açığı bulundu (`npm audit fix` ile düzeltebilirsiniz).
-- [ ] Kullanılmayan paketleri temizle.
+### Opsiyonel İyileştirmeler
+- [ ] Shopier IP kontrolü
+- [ ] Sentry logging entegrasyonu
+- [ ] Kullanılmayan paketleri temizle
+- [ ] `npm audit fix` çalıştır
 
 ---
 
-## 📋 Uygulama Sırası Önerisi
+## 📁 DOSYA REFERANSLARI
 
-1. **Önce UI Düzeltmesi (3.1)** yapılmalı ki sistem test edilebilir olsun.
-2. **Ardından Middleware (1.2) ve Env Validation (1.1)** eklenmeli.
-3. **Son olarak API Güvenliği (2.1) ve RLS (2.2)** yapılandırılmalı.
+| Dosya | Bilgi |
+|-------|-------|
+| [database-tasks.md](./database-tasks.md) | Veritabanı SQL komutları |
+| `lib/env.ts` | Env validation |
+| `middleware.ts` | Route protection |
+| `app/dashboard/` | Kullanıcı paneli |

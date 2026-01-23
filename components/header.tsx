@@ -111,10 +111,11 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="cursor-pointer">
-                    Dashboard
-                  </Link>
+                <DropdownMenuItem
+                  onClick={() => router.push('/dashboard')}
+                  className="cursor-pointer"
+                >
+                  Dashboard
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
