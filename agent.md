@@ -93,6 +93,14 @@ Bu belge, NPC Engineering projesinde tespit edilen güvenlik açıklarını kapa
 
 ## 🟢 AŞAMA 4: Bakım ve İzleme
 
+### 4.0. Satın Alma Güvenliği (YENİ)
+
+**Hedef:** Giriş yapmadan ürün satın alınmasını engellemek ve fiyatları TL olarak göstermek.
+
+- [x] `purchase-button.tsx` dosyasında auth kontrolü eklendi - kullanıcı giriş yapmamışsa "Satın Almak İçin Giriş Yapın" butonu gösteriliyor.
+- [x] Fiyatlar TL (₺) formatında gösterilecek şekilde düzenlendi (`Intl.NumberFormat` kullanılarak).
+- [x] Ürün detay sayfasında fiyatlar $ yerine ₺ olarak gösterilecek şekilde güncellendi.
+
 ### 4.1. Logging
 
 - [ ] Kritik hatalar (Ödeme hataları, Auth hataları) için bir loglama servisi (Sentry vb.) veya veritabanında bir `error_logs` tablosu kur.

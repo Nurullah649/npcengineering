@@ -1,14 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, ShoppingCart, X } from "lucide-react"
+import { Loader2, ShoppingCart, X, LogIn } from "lucide-react"
 import type { Product } from "@/lib/products"
+import { supabase } from "@/lib/supabase"
+import type { User } from "@supabase/supabase-js"
 
 interface PurchaseButtonProps {
   product: Product
+}
+
+// TL formatında fiyat gösterimi
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: 'TRY',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price)
 }
 
 export function PurchaseButton({ product }: PurchaseButtonProps) {
@@ -16,6 +30,24 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   // Yükleniyor durumu
   const [isLoading, setIsLoading] = useState(false)
+  // Kullanıcı durumu
+  const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const router = useRouter()
+
+  // Auth state kontrolü
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      setAuthLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Form verileri
   const [formData, setFormData] = useState({
@@ -33,6 +65,13 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
   // Ödeme işlemini başlatan fonksiyon
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Kullanıcı giriş yapmamışsa satın alma yapamaz
+    if (!user) {
+      router.push(`/login?redirect=/products/${product.slug}`)
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -78,6 +117,36 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
     }
   }
 
+  // Kullanıcı giriş yapmamışsa farklı buton göster
+  if (authLoading) {
+    return (
+      <Button size="lg" className="w-full" disabled>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Yükleniyor...
+      </Button>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="space-y-3">
+        <Button
+          size="lg"
+          className="w-full"
+          asChild
+        >
+          <Link href={`/login?redirect=/products/${product.slug}`}>
+            <LogIn className="mr-2 h-4 w-4" />
+            Satın Almak İçin Giriş Yapın
+          </Link>
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          Ürün satın almak için hesabınıza giriş yapmanız gerekmektedir.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <>
       {/* ANA BUTON */}
@@ -87,7 +156,7 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
         onClick={() => setIsOpen(true)}
       >
         <ShoppingCart className="mr-2 h-4 w-4" />
-        Satın Al - ${product.price}
+        Satın Al - {formatPrice(product.price)}
       </Button>
 
       {/* MODAL (Açılır Pencere) */}
@@ -167,7 +236,7 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
                       Shopier'e Yönlendiriliyor...
                     </>
                   ) : (
-                    `Ödemeye Geç (${product.price} TL)`
+                    `Ödemeye Geç (${formatPrice(product.price)})`
                   )}
                 </Button>
               </div>

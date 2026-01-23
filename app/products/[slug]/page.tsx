@@ -157,10 +157,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {/* Price & Purchase */}
               <div className="mt-8 rounded-xl border border-border bg-card p-6">
                 <div className="mb-4 flex items-baseline gap-3">
-                  <span className="text-4xl font-bold text-foreground">${product.price}</span>
+                  <span className="text-4xl font-bold text-foreground">{product.price} ₺</span>
                   {product.originalPrice && (
                     <span className="text-xl text-muted-foreground line-through">
-                      ${product.originalPrice}
+                      {product.originalPrice} ₺
                     </span>
                   )}
                 </div>
