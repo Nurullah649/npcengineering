@@ -51,7 +51,7 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
@@ -64,11 +64,19 @@ export default function LoginPage() {
 
       toast.success('Başarıyla giriş yapıldı!');
 
-      // URL'den redirect parametresini al veya dashboard'a git
+      // URL'den redirect parametresini al
       const searchParams = new URLSearchParams(window.location.search);
-      const redirectTo = searchParams.get('redirect') || '/dashboard';
+      let redirectTo = searchParams.get('redirect');
 
-      // Hard navigation ile yönlendir (session'ın yüklenmesi için)
+      if (!redirectTo) {
+        // Redirect yoksa role göre varsayılan sayfaya git
+        const isAdmin = data.user?.user_metadata?.role === 'admin' ||
+          data.user?.email?.endsWith('@npcengineering.com');
+
+        redirectTo = isAdmin ? '/admin' : '/dashboard';
+      }
+
+      // Hard navigation ile yönlendir
       window.location.href = redirectTo;
 
     } catch (error) {

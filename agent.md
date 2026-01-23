@@ -30,6 +30,14 @@ Bu belge, NPC Engineering projesinde yapılan ve yapılacak tüm değişiklikler
 - [x] `app/dashboard/settings/password/page.tsx` - Şifre değiştirme
 - [x] `app/dashboard/settings/billing/page.tsx` - Fatura adresi
 
+### Admin Paneli
+- [x] `app/admin/layout.tsx` - Admin menüsü ve layout
+- [x] `app/admin/page.tsx` - Admin dashboard (istatistikler)
+- [x] `app/admin/products/` - Ürün yönetimi (CRUD)
+- [x] `app/admin/orders/` - Sipariş yönetimi ve durum güncelleme
+- [x] `app/admin/users/` - Kullanıcı yönetimi ve rol atama
+- [x] `app/login/page.tsx` - Role göre otomatik yönlendirme (Admin → /admin, User → /dashboard)
+
 ### Paket Güncellemeleri
 - [x] `@supabase/ssr` paketi eklendi
 - [x] `npm audit` çalıştırıldı (1 moderate lodash açığı var)
