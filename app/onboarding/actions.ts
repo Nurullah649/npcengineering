@@ -128,22 +128,54 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         // 5. Slug oluştur
         const slug = await generateUniqueSlug(formData.cafeName)
 
-        // 6. Şifreyi hashle
+        // 6. Şifreyi hashle (Cafes tablosu için - eğer custom auth kullanılıyorsa)
         const hashedPassword = await bcrypt.hash(formData.password, 12)
 
-        // 7. Abonelik bitiş tarihini hesapla (30 gün)
+        // 7. SiparisGO'da Auth User oluştur (veya mevcut varsa al)
+        // Cafes tablosundaki owner_id -> auth.users(id) referansı için gerekli
+        let ownerId = user.id
+
+        // Email ile kullanıcıyı ara
+        const { data: { users: existingUsers } } = await siparisgoDb.auth.admin.listUsers()
+        const existingSiparisUser = existingUsers.find(u => u.email === user.email)
+
+        if (existingSiparisUser) {
+            ownerId = existingSiparisUser.id
+        } else {
+            // Yeni kullanıcı oluştur
+            const { data: newUser, error: createUserError } = await siparisgoDb.auth.admin.createUser({
+                email: user.email!, // NPC Engineering'deki emailini kullanıyoruz
+                password: formData.password,
+                email_confirm: true,
+                user_metadata: {
+                    full_name: formData.cafeName,
+                    username: formData.username
+                }
+            })
+
+            if (createUserError || !newUser.user) {
+                console.error('SiparisGO auth user creation error:', createUserError)
+                return {
+                    success: false,
+                    error: 'SiparisGO kullanıcı hesabı oluşturulamadı: ' + (createUserError?.message || 'Bilinmeyen hata')
+                }
+            }
+            ownerId = newUser.user.id
+        }
+
+        // 8. Abonelik bitiş tarihini hesapla (30 gün)
         const subscriptionEndDate = new Date()
         subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30)
 
-        // 8. Cafes tablosuna insert
+        // 9. Cafes tablosuna insert
         const { data: newCafe, error: insertError } = await siparisgoDb
             .from('cafes')
             .insert({
                 name: formData.cafeName.trim(),
                 slug: slug,
-                owner_id: user.id,
+                owner_id: ownerId, // SiparisGO Auth ID'sini kullanıyoruz
                 username: formData.username.toLowerCase().trim(),
-                password: hashedPassword,
+                password: hashedPassword, // Custom auth için saklıyoruz
                 role: 'admin',
                 is_active: true,
                 subscription_end_date: subscriptionEndDate.toISOString(),
