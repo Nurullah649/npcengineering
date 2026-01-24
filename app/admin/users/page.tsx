@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { updateUserRole } from '../actions'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import { Loader2, Shield, User } from 'lucide-react'
@@ -10,6 +11,7 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
     Table,
     TableBody,
@@ -31,11 +33,24 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<UserProfile[]>([])
 
+    // Confirmation dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean
+        userId: string
+        currentRole: string
+        userName: string
+    }>({ open: false, userId: '', currentRole: '', userName: '' })
+
     const fetchUsers = async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false })
+
+        if (error) {
+            toast.error('Kullanıcılar yüklenirken hata oluştu')
+            console.error(error)
+        }
 
         if (data) {
             setUsers(data)
@@ -47,21 +62,26 @@ export default function AdminUsersPage() {
         fetchUsers()
     }, [])
 
-    const toggleRole = async (userId: string, currentRole: string) => {
+    const handleRoleClick = (user: UserProfile) => {
+        setConfirmDialog({
+            open: true,
+            userId: user.id,
+            currentRole: user.role,
+            userName: user.full_name || user.email
+        })
+    }
+
+    const confirmRoleChange = async () => {
+        const { userId, currentRole } = confirmDialog
         const newRole = currentRole === 'admin' ? 'user' : 'admin'
 
-        const { error } = await supabase
-            .from('profiles')
-            .update({ role: newRole })
-            .eq('id', userId)
-
-        if (error) {
-            toast.error('Rol güncellenemedi')
-            return
+        try {
+            const result = await updateUserRole(userId, newRole as 'admin' | 'user')
+            toast.success(result.message)
+            fetchUsers()
+        } catch (error: any) {
+            toast.error(error.message || 'Rol güncellenemedi')
         }
-
-        toast.success(`Rol "${newRole}" olarak güncellendi`)
-        fetchUsers()
     }
 
     if (loading) {
@@ -71,6 +91,8 @@ export default function AdminUsersPage() {
             </div>
         )
     }
+
+    const newRole = confirmDialog.currentRole === 'admin' ? 'Kullanıcı' : 'Admin'
 
     return (
         <div className="space-y-6">
@@ -128,7 +150,7 @@ export default function AdminUsersPage() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => toggleRole(user.id, user.role)}
+                                                onClick={() => handleRoleClick(user)}
                                             >
                                                 {user.role === 'admin' ? 'User Yap' : 'Admin Yap'}
                                             </Button>
@@ -140,6 +162,17 @@ export default function AdminUsersPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+                title="Rol Değiştir"
+                description={`"${confirmDialog.userName}" kullanıcısının rolünü "${newRole}" olarak değiştirmek istediğinizden emin misiniz?`}
+                confirmLabel="Değiştir"
+                onConfirm={confirmRoleChange}
+                variant={confirmDialog.currentRole === 'admin' ? 'destructive' : 'default'}
+            />
         </div>
     )
 }

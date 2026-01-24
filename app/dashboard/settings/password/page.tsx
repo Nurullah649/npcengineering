@@ -26,11 +26,16 @@ const formSchema = z.object({
     newPassword: z.string()
         .min(8, 'Şifre en az 8 karakter olmalı')
         .regex(/[A-Z]/, 'En az bir büyük harf içermeli')
-        .regex(/[0-9]/, 'En az bir rakam içermeli'),
+        .regex(/[a-z]/, 'En az bir küçük harf içermeli')
+        .regex(/[0-9]/, 'En az bir rakam içermeli')
+        .regex(/[!@#$%^&*(),.?":{}|<>]/, 'En az bir özel karakter içermeli'),
     confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Şifreler eşleşmiyor',
     path: ['confirmPassword'],
+}).refine((data) => data.newPassword !== data.currentPassword, {
+    message: 'Yeni şifre mevcut şifre ile aynı olamaz',
+    path: ['newPassword'],
 })
 
 export default function PasswordPage() {
@@ -49,18 +54,32 @@ export default function PasswordPage() {
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         setSaving(true)
         try {
+            // Önce mevcut kullanıcıyı al
+            const { data: { user } } = await supabase.auth.getUser()
+
+            if (!user?.email) {
+                toast.error('Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.')
+                return
+            }
+
+            // Mevcut şifreyi doğrula (re-authentication)
+            const { error: authError } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: values.currentPassword
+            })
+
+            if (authError) {
+                toast.error('Mevcut şifre yanlış.')
+                return
+            }
+
             // Şifreyi güncelle
             const { error } = await supabase.auth.updateUser({
                 password: values.newPassword
             })
 
             if (error) {
-                if (error.message.includes('same')) {
-                    toast.error('Yeni şifre mevcut şifre ile aynı olamaz.')
-                } else {
-                    throw error
-                }
-                return
+                throw error
             }
 
             toast.success('Şifreniz başarıyla güncellendi!')

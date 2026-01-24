@@ -68,10 +68,22 @@ export default function AdminLayout({
                 return
             }
 
-            // Admin kontrolü - Sadece metadata kontrolü
-            const adminCheck = user.user_metadata?.role === 'admin'
+            // Admin kontrolü - profiles tablosundan (user_metadata güvenilmez)
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
 
-            console.log('Admin check result:', adminCheck, 'Email:', user.email, 'Role:', user.user_metadata?.role)
+            if (profileError) {
+                console.error('Admin Layout: Profile fetch error', profileError)
+                router.push('/dashboard')
+                return
+            }
+
+            const adminCheck = profile?.role === 'admin'
+
+            console.log('Admin check result:', adminCheck, 'Email:', user.email, 'Role:', profile?.role)
 
             if (!adminCheck) {
                 console.log('Admin Layout: Not admin, redirecting to dashboard')

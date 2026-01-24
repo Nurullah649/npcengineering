@@ -50,20 +50,25 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // Check if user has admin role (from profiles table)
-        let isAdmin = user.user_metadata?.role === 'admin'
+        // Admin kontrolü - SADECE profiles tablosundan (user_metadata güvenilmez)
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
 
-        if (!isAdmin) {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single()
-
-            isAdmin = profile?.role === 'admin'
+        if (profileError) {
+            console.error('Middleware: Profile fetch error', profileError)
+            // Database hatası - güvenli tarafta kal, dashboard'a yönlendir
+            const url = request.nextUrl.clone()
+            url.pathname = '/dashboard'
+            return NextResponse.redirect(url)
         }
 
-        if (!isAdmin && user.email?.endsWith('@npcengineering.com')) {
+        let isAdmin = profile?.role === 'admin'
+
+        // Email domain bazlı admin erişimi - SADECE verified email için
+        if (!isAdmin && user.email?.endsWith('@npcengineering.com') && user.email_confirmed_at) {
             isAdmin = true
         }
 
@@ -80,5 +85,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         '/admin/:path*',
+        '/dashboard/:path*',
     ],
 }

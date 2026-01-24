@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { updateOrderStatus } from '../actions'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
@@ -55,18 +56,13 @@ export default function AdminOrdersPage() {
     }, [])
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
-        const { error } = await supabase
-            .from('orders')
-            .update({ status: newStatus })
-            .eq('id', orderId)
-
-        if (error) {
-            toast.error('Durum güncellenemedi')
-            return
+        try {
+            const result = await updateOrderStatus(orderId, newStatus)
+            toast.success(result.message)
+            fetchOrders()
+        } catch (error: any) {
+            toast.error(error.message || 'Durum güncellenemedi')
         }
-
-        toast.success('Sipariş durumu güncellendi')
-        fetchOrders()
     }
 
     if (loading) {

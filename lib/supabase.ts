@@ -1,6 +1,9 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { env } from './env'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createBrowserClient(supabaseUrl, supabaseKey)
+// Client-side Supabase client (browser only)
+// Environment variables validated by env.ts at startup
+export const supabase = createBrowserClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)

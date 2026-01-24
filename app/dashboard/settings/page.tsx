@@ -23,7 +23,14 @@ import {
 
 const formSchema = z.object({
     full_name: z.string().min(2, 'Ad Soyad en az 2 karakter olmalı'),
-    phone: z.string().optional(),
+    phone: z.string()
+        .refine((val) => {
+            if (!val || val.trim() === '') return true // optional
+            // Turkish phone format: 05XX XXX XX XX or +90 5XX XXX XX XX
+            const cleaned = val.replace(/\s/g, '')
+            return /^(0|\+90)?5\d{9}$/.test(cleaned)
+        }, { message: 'Geçerli bir telefon numarası girin (05XX XXX XX XX)' })
+        .optional(),
 })
 
 export default function SettingsPage() {
@@ -42,31 +49,46 @@ export default function SettingsPage() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-            setEmail(user.email || '')
+                if (authError || !user) {
+                    toast.error('Oturum bilgisi alınamadı. Lütfen tekrar giriş yapın.')
+                    setLoading(false)
+                    return
+                }
 
-            // Profil bilgilerini getir
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, phone')
-                .eq('id', user.id)
-                .single()
+                setEmail(user.email || '')
 
-            if (profile) {
-                form.reset({
-                    full_name: profile.full_name || user.user_metadata?.full_name || '',
-                    phone: profile.phone || '',
-                })
-            } else {
-                form.reset({
-                    full_name: user.user_metadata?.full_name || '',
-                    phone: '',
-                })
+                // Profil bilgilerini getir
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('full_name, phone')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profileError && profileError.code !== 'PGRST116') {
+                    // PGRST116 = row not found, bu normal olabilir
+                    console.error('Profile fetch error:', profileError)
+                }
+
+                if (profile) {
+                    form.reset({
+                        full_name: profile.full_name || user.user_metadata?.full_name || '',
+                        phone: profile.phone || '',
+                    })
+                } else {
+                    form.reset({
+                        full_name: user.user_metadata?.full_name || '',
+                        phone: '',
+                    })
+                }
+            } catch (error) {
+                console.error('Fetch profile error:', error)
+                toast.error('Profil bilgileri yüklenirken bir hata oluştu.')
+            } finally {
+                setLoading(false)
             }
-
-            setLoading(false)
         }
         fetchProfile()
     }, [form])
@@ -75,7 +97,10 @@ export default function SettingsPage() {
         setSaving(true)
         try {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            if (!user) {
+                toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.')
+                return
+            }
 
             // Profili güncelle
             const { error } = await supabase
