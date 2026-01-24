@@ -59,7 +59,12 @@ export default function AdminLayout({
 
     useEffect(() => {
         const checkAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
+            console.log('=== Admin Layout: Starting auth check ===')
+
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+            console.log('Admin Layout: Session:', session ? 'exists' : 'null', 'Error:', sessionError)
+
             const user = session?.user
 
             if (!user) {
@@ -68,6 +73,8 @@ export default function AdminLayout({
                 return
             }
 
+            console.log('Admin Layout: User found, ID:', user.id, 'Email:', user.email)
+
             // Admin kontrolü - profiles tablosundan (user_metadata güvenilmez)
             const { data: profile, error: profileError } = await supabase
                 .from('profiles')
@@ -75,15 +82,17 @@ export default function AdminLayout({
                 .eq('id', user.id)
                 .single()
 
+            console.log('Admin Layout: Profile query result:', { profile, error: profileError })
+
             if (profileError) {
-                console.error('Admin Layout: Profile fetch error', profileError)
+                console.error('Admin Layout: Profile fetch error', profileError.message, profileError.code)
                 router.push('/dashboard')
                 return
             }
 
             const adminCheck = profile?.role === 'admin'
 
-            console.log('Admin check result:', adminCheck, 'Email:', user.email, 'Role:', profile?.role)
+            console.log('Admin Layout: Final check - Role:', profile?.role, 'Is Admin:', adminCheck)
 
             if (!adminCheck) {
                 console.log('Admin Layout: Not admin, redirecting to dashboard')
@@ -91,6 +100,7 @@ export default function AdminLayout({
                 return
             }
 
+            console.log('Admin Layout: Admin confirmed, rendering admin panel')
             setUser(user)
             setIsAdmin(true)
             setLoading(false)
