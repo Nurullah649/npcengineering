@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
-import { Loader2, Receipt, FileText } from 'lucide-react'
+import { Loader2, Receipt, FileText, ExternalLink } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -103,7 +104,7 @@ export default function OrdersPage() {
                                     <TableHead>Tarih</TableHead>
                                     <TableHead>Tutar</TableHead>
                                     <TableHead>Durum</TableHead>
-                                    <TableHead className="text-right">Fatura</TableHead>
+                                    <TableHead className="text-right">İşlem</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -123,9 +124,18 @@ export default function OrdersPage() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" disabled>
-                                                <FileText className="h-4 w-4" />
-                                            </Button>
+                                            {order.products?.slug === 'siparisgo' && order.status === 'paid' ? (
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/onboarding/siparisgo?order_id=${order.id}`}>
+                                                        Kuruluma Git
+                                                        <ExternalLink className="ml-1 h-3 w-3" />
+                                                    </Link>
+                                                </Button>
+                                            ) : (
+                                                <Button variant="ghost" size="sm" disabled>
+                                                    <FileText className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
