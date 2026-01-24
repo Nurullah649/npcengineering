@@ -6,6 +6,9 @@ import { getAllProducts, getAllCategories } from "@/lib/products"
 import { ArrowRight, Code2, Zap, Shield, HeartHandshake } from "lucide-react"
 import Link from "next/link"
 
+// Sayfa cache'ini devre dışı bırak - her istekte güncel veri çek
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   // Verileri veritabanından asenkron olarak çekiyoruz
   const products = await getAllProducts()

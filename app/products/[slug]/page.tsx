@@ -15,13 +15,8 @@ import {
 import { ProductScreenshots } from "./product-screenshots"
 import { PurchaseButton } from "./purchase-button"
 
-// Build sırasında statik sayfaları oluşturmak için tüm ürünleri çekiyoruz
-export async function generateStaticParams() {
-  const products = await getAllProducts()
-  return products.map((product) => ({
-    slug: product.slug,
-  }))
-}
+// Sayfa cache'ini devre dışı bırak - her istekte güncel fiyat çek
+export const dynamic = 'force-dynamic'
 
 // Meta verileri (SEO başlıkları vb.) oluşturuyoruz
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {

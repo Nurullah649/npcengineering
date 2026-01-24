@@ -75,28 +75,28 @@ export async function POST(request: NextRequest) {
       // Sipariş durumunu "paid" olarak güncelle ve ürün slug'ını al
       let productSlug = '';
       try {
-        // Supabase client oluştur (server-side)
+        // RPC fonksiyonu kullan - SECURITY DEFINER ile RLS bypass
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
 
-        // Order'ı bul ve product slug'ını al
-        const { data: order } = await supabase
-          .from('orders')
-          .select('id, product_id, products(slug)')
-          .eq('shopier_order_id', paymentResult.order_id)
-          .single();
+        console.log('[Shopier Callback] Updating order with shopier_order_id:', paymentResult.order_id);
 
-        if (order) {
-          productSlug = (order.products as any)?.slug || '';
+        // Security Definer fonksiyonu çağır
+        const { data, error } = await supabase.rpc('update_order_status_by_shopier_id', {
+          p_shopier_order_id: paymentResult.order_id,
+          p_status: 'paid'
+        });
 
-          // Sipariş durumunu güncelle
-          await supabase
-            .from('orders')
-            .update({ status: 'paid', updated_at: new Date().toISOString() })
-            .eq('id', order.id);
+        console.log('[Shopier Callback] RPC result:', { data, error });
+
+        if (data && data.length > 0) {
+          productSlug = data[0].product_slug || '';
+          console.log('[Shopier Callback] Order updated successfully, product:', productSlug);
+        } else {
+          console.log('[Shopier Callback] Order not found for shopier_order_id:', paymentResult.order_id);
         }
       } catch (dbError) {
         console.error('[Shopier Callback] DB update error:', dbError);
