@@ -49,35 +49,50 @@ export async function POST(request: NextRequest) {
 
     // 2. Kullanıcı oturumunu kontrol et
     const supabase = await getAuthClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    console.log('[Payment API] Auth check:', { userId: user?.id, authError });
 
     if (!user) {
+      console.log('[Payment API] No user session found');
       return NextResponse.json({ error: 'Giriş yapmanız gerekiyor' }, { status: 401 });
     }
 
     const orderId = `NPC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     // 3. Order'ı veritabanına kaydet
-    const { data: dbProduct } = await supabase
+    const { data: dbProduct, error: productError } = await supabase
       .from('products')
       .select('id')
       .eq('slug', slug)
       .single();
 
+    console.log('[Payment API] Product lookup:', { slug, dbProduct, productError });
+
     if (dbProduct) {
-      const { error: orderError } = await supabase
+      const orderData = {
+        user_id: user.id,
+        product_id: dbProduct.id,
+        amount: product.price,
+        status: 'pending',
+        shopier_order_id: orderId,
+      };
+
+      console.log('[Payment API] Creating order:', orderData);
+
+      const { data: createdOrder, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: user.id,
-          product_id: dbProduct.id,
-          amount: product.price,
-          status: 'pending',
-          shopier_order_id: orderId,
-        });
+        .insert(orderData)
+        .select('id')
+        .single();
+
+      console.log('[Payment API] Order creation result:', { createdOrder, orderError });
 
       if (orderError) {
-        console.error('Order creation error:', orderError);
+        console.error('[Payment API] Order creation error:', orderError);
       }
+    } else {
+      console.error('[Payment API] Product not found in database for slug:', slug);
     }
 
     const shopier = createShopier();
