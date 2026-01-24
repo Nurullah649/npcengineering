@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
     // 3. İmzayı doğrula (try-catch ile sarmalanmış)
     let paymentResult: ReturnType<typeof shopier.callback> | false;
     try {
-      paymentResult = shopier.callback(body, process.env.SHOPIER_API_SECRET!);
+      // callback fonksiyonu sadece body alır (secret'ı constructor'da verdik veya env'den okur)
+      paymentResult = shopier.callback(body);
     } catch (signatureError) {
       console.error('[Shopier Callback] Signature validation error:', signatureError);
       console.error('[Shopier Callback] Request body:', JSON.stringify(body, null, 2));
@@ -110,7 +111,8 @@ export async function POST(request: NextRequest) {
         redirectUrl.searchParams.set('product', productSlug);
       }
 
-      return NextResponse.redirect(redirectUrl);
+      // HTTP 303 See Other: POST işleminden sonra GET sayfasına yönlendirmek için standart
+      return NextResponse.redirect(redirectUrl, { status: 303 });
     } else {
       // --- ÖDEME GEÇERSİZ ---
       console.error('[Shopier Callback] Invalid signature! Possible fraud attempt.', {
@@ -122,14 +124,15 @@ export async function POST(request: NextRequest) {
       redirectUrl.searchParams.set('status', 'failed');
       redirectUrl.searchParams.set('error', 'ERR_INVALID_SIGNATURE');
 
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(redirectUrl, { status: 303 });
     }
   } catch (error) {
     console.error('[Shopier Callback] System error:', error);
 
     // Sistem hatası durumunda yönlendirme
     return NextResponse.redirect(
-      new URL('/callback?status=failed&error=ERR_SYSTEM', request.url)
+      new URL('/callback?status=failed&error=ERR_SYSTEM', request.url),
+      { status: 303 }
     );
   }
 }
