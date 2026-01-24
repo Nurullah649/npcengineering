@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { createCafe } from '../actions'
@@ -12,7 +12,25 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
+// Loading fallback
+function LoadingSpinner() {
+    return (
+        <div className="flex min-h-screen items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    )
+}
+
+// Main content wrapped in Suspense
 export default function SiparisgoOnboardingPage() {
+    return (
+        <Suspense fallback={<LoadingSpinner />}>
+            <OnboardingContent />
+        </Suspense>
+    )
+}
+
+function OnboardingContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const orderId = searchParams.get('order_id')
