@@ -56,10 +56,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-foreground">${product.price}</span>
+              <span className="text-xl font-bold text-foreground">{product.price} ₺</span>
               {product.originalPrice && (
                 <span className="text-sm text-muted-foreground line-through">
-                  ${product.originalPrice}
+                  {product.originalPrice} ₺
                 </span>
               )}
             </div>

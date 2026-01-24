@@ -24,38 +24,44 @@ export default function AdminDashboard() {
     totalRevenue: 0,
   })
 
+  const fetchStats = async () => {
+    // Ürün sayısı
+    const { count: productsCount } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+
+    // Sipariş sayısı ve toplam gelir
+    const { data: ordersData } = await supabase
+      .from('orders')
+      .select('amount, status')
+
+    const totalOrders = ordersData?.length || 0
+    const totalRevenue = ordersData
+      ?.filter(o => o.status === 'paid')
+      ?.reduce((acc, o) => acc + (o.amount || 0), 0) || 0
+
+    // Kullanıcı sayısı
+    const { count: usersCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+
+    setStats({
+      totalProducts: productsCount || 0,
+      totalOrders,
+      totalUsers: usersCount || 0,
+      totalRevenue,
+    })
+
+    setLoading(false)
+  }
+
   useEffect(() => {
-    const fetchStats = async () => {
-      // Ürün sayısı
-      const { count: productsCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-
-      // Sipariş sayısı ve toplam gelir
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('amount, status')
-
-      const totalOrders = ordersData?.length || 0
-      const totalRevenue = ordersData
-        ?.filter(o => o.status === 'paid')
-        ?.reduce((acc, o) => acc + (o.amount || 0), 0) || 0
-
-      // Kullanıcı sayısı
-      const { count: usersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-
-      setStats({
-        totalProducts: productsCount || 0,
-        totalOrders,
-        totalUsers: usersCount || 0,
-        totalRevenue,
-      })
-
-      setLoading(false)
-    }
     fetchStats()
+
+    // Sayfa focus'a geldiğinde verileri yenile
+    const handleFocus = () => fetchStats()
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
   if (loading) {

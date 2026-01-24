@@ -60,6 +60,11 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         fetchUsers()
+
+        // Sayfa focus'a geldiğinde verileri yenile
+        const handleFocus = () => fetchUsers()
+        window.addEventListener('focus', handleFocus)
+        return () => window.removeEventListener('focus', handleFocus)
     }, [])
 
     const handleRoleClick = (user: UserProfile) => {

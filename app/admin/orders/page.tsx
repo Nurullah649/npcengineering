@@ -53,6 +53,11 @@ export default function AdminOrdersPage() {
 
     useEffect(() => {
         fetchOrders()
+
+        // Sayfa focus'a geldiğinde verileri yenile
+        const handleFocus = () => fetchOrders()
+        window.addEventListener('focus', handleFocus)
+        return () => window.removeEventListener('focus', handleFocus)
     }, [])
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {

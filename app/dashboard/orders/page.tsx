@@ -33,23 +33,32 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true)
     const [orders, setOrders] = useState<Order[]>([])
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+    const fetchOrders = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-            const { data } = await supabase
-                .from('orders')
-                .select('*, products(name, slug)')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
+        const { data } = await supabase
+            .from('orders')
+            .select('*, products(name, slug)')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
 
-            if (data) {
-                setOrders(data as any)
-            }
-            setLoading(false)
+        if (data) {
+            setOrders(data as any)
         }
+        setLoading(false)
+    }
+
+    useEffect(() => {
         fetchOrders()
+
+        // Sayfa focus'a geldiğinde verileri yenile
+        const handleFocus = () => {
+            fetchOrders()
+        }
+
+        window.addEventListener('focus', handleFocus)
+        return () => window.removeEventListener('focus', handleFocus)
     }, [])
 
     if (loading) {
