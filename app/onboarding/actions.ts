@@ -76,7 +76,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         const { data: order, error: orderError } = await npcClient
             .from('orders')
             .select('id, user_id, status, products(slug)')
-            .eq('id', formData.orderId)
+            .eq('shopier_order_id', formData.orderId)
             .single()
 
         if (orderError || !order) {
@@ -203,7 +203,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                 status: 'completed',
                 updated_at: new Date().toISOString()
             })
-            .eq('id', formData.orderId)
+            .eq('shopier_order_id', formData.orderId)
 
         // 10. Başarılı - redirect URL döndür
         return {
