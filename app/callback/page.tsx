@@ -1,28 +1,61 @@
+'use client'
+
 import Link from "next/link"
-import { redirect } from "next/navigation"
-import { CheckCircle2, XCircle, Home, ArrowRight } from "lucide-react"
+import { useSearchParams, useRouter } from "next/navigation"
+import { useEffect, Suspense } from "react"
+import { CheckCircle2, XCircle, Home, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 
-// Next.js 15 ve sonrası için searchParams Promise olarak gelir
-export default async function CallbackPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}) {
-  // URL parametrelerini okuyoruz
-  const params = await searchParams
-  const status = params.status
-  const orderId = params.order_id as string | undefined
-  const error = params.error
-  const product = params.product as string | undefined
+function LoadingSpinner() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  )
+}
+
+export default function CallbackPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <CallbackContent />
+    </Suspense>
+  )
+}
+
+function CallbackContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const status = searchParams.get('status')
+  const orderId = searchParams.get('order_id')
+  const error = searchParams.get('error')
+  const product = searchParams.get('product')
 
   const isSuccess = status === "success"
 
-  // SiparisGO ürünü için onboarding sayfasına yönlendir
+  // SiparisGO ürünü için onboarding sayfasına yönlendir (client-side)
+  useEffect(() => {
+    if (isSuccess && product === "siparisgo" && orderId) {
+      router.push(`/onboarding/siparisgo?order_id=${orderId}`)
+    }
+  }, [isSuccess, product, orderId, router])
+
+  // SiparisGO için yönlendirme bekleniyorsa loading göster
   if (isSuccess && product === "siparisgo" && orderId) {
-    redirect(`/onboarding/siparisgo?order_id=${orderId}`)
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Header />
+        <main className="flex flex-1 items-center justify-center p-4">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <p className="text-muted-foreground">SiparisGO kurulumuna yönlendiriliyorsunuz...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   return (
@@ -50,61 +83,62 @@ export default async function CallbackPage({
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {isSuccess ? "Ödeme Başarılı!" : "Ödeme Başarısız"}
             </h1>
-            <p className="text-muted-foreground text-lg">
-              {isSuccess
-                ? "Siparişiniz başarıyla alındı. Teşekkür ederiz."
-                : "Ödeme işlemi sırasında bir sorun oluştu."}
+            <p className="text-muted-foreground">
+              {isSuccess ? (
+                <>
+                  Siparişiniz başarıyla tamamlandı.
+                  {orderId && (
+                    <span className="block mt-2 text-sm">
+                      Sipariş No: <span className="font-mono font-medium text-foreground">{orderId}</span>
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  Ödeme işlemi sırasında bir hata oluştu.
+                  {error && (
+                    <span className="block mt-2 text-sm text-destructive">
+                      Hata Kodu: {error}
+                    </span>
+                  )}
+                </>
+              )}
             </p>
           </div>
 
-          {/* DETAY KUTUSU */}
-          <div className="rounded-xl border bg-card p-6 shadow-sm text-left space-y-3">
-            <div className="flex justify-between items-center py-1 border-b border-border/50 pb-3">
-              <span className="text-muted-foreground text-sm">İşlem Durumu</span>
-              <span className={`font-medium ${isSuccess ? 'text-green-600' : 'text-red-600'}`}>
-                {isSuccess ? 'Onaylandı' : 'Reddedildi'}
-              </span>
-            </div>
-
-            {orderId && (
-              <div className="flex justify-between items-center py-1">
-                <span className="text-muted-foreground text-sm">Sipariş No</span>
-                <span className="font-mono font-medium text-foreground">{orderId}</span>
-              </div>
-            )}
-
-            {!isSuccess && error && (
-              <div className="flex justify-between items-center py-1">
-                <span className="text-muted-foreground text-sm">Hata Kodu</span>
-                <span className="font-mono text-sm text-red-500">{error}</span>
-              </div>
-            )}
-          </div>
-
           {/* BUTONLAR */}
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             {isSuccess ? (
-              // Başarılıysa Dashboard'a veya Ürünlere yönlendir
-              <Link href="/dashboard" className="w-full">
-                <Button className="w-full h-12 text-base" size="lg">
-                  Siparişlerime Git <ArrowRight className="ml-2 h-4 w-4" />
+              <>
+                <Button asChild>
+                  <Link href="/dashboard/orders">
+                    Siparişlerime Git
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
-              </Link>
+                <Button variant="outline" asChild>
+                  <Link href="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    Ana Sayfa
+                  </Link>
+                </Button>
+              </>
             ) : (
-              // Başarısızsa Tekrar Dene veya İletişim
-              <Link href="/" className="w-full">
-                <Button variant="destructive" className="w-full h-12 text-base">
-                  Tekrar Dene
+              <>
+                <Button asChild>
+                  <Link href="/#products">
+                    Tekrar Dene
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
-              </Link>
+                <Button variant="outline" asChild>
+                  <Link href="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    Ana Sayfa
+                  </Link>
+                </Button>
+              </>
             )}
-
-            <Link href="/" className="w-full">
-              <Button variant="outline" className="w-full h-12">
-                <Home className="mr-2 h-4 w-4" />
-                Ana Sayfaya Dön
-              </Button>
-            </Link>
           </div>
         </div>
       </main>
