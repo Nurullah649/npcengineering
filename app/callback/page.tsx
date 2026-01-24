@@ -110,12 +110,22 @@ function CallbackContent() {
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             {isSuccess ? (
               <>
-                <Button asChild>
-                  <Link href="/dashboard/orders">
-                    Siparişlerime Git
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                {product === "siparisgo" && orderId ? (
+                  <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Link href={`/onboarding/siparisgo?order_id=${orderId}`}>
+                      Kuruluma Başla
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/dashboard/orders">
+                      Siparişlerime Git
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
+
                 <Button variant="outline" asChild>
                   <Link href="/">
                     <Home className="mr-2 h-4 w-4" />

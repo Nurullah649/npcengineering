@@ -37,10 +37,36 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
 
   // Auth state kontrolü
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function loadUserAndProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       setAuthLoading(false)
-    })
+
+      if (user) {
+        // Profil bilgisini çek
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .single()
+
+        const fullName = profile?.full_name || user.user_metadata?.full_name || ''
+        // İlk boşluğa kadar isim, kalanı soyisim varsayımı
+        const parts = fullName.trim().split(' ')
+        const name = parts[0] || ''
+        const surname = parts.slice(1).join(' ') || ''
+
+        setFormData(prev => ({
+          ...prev,
+          name: name,
+          surname: surname,
+          email: user.email || '',
+          phone: profile?.phone || '',
+        }))
+      }
+    }
+
+    loadUserAndProfile()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
