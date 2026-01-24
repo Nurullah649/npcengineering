@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
                 getAll() {
                     return request.cookies.getAll()
                 },
-                setAll(cookiesToSet) {
+                setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
                     cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
                     supabaseResponse = NextResponse.next({
                         request,
@@ -31,6 +31,15 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     const pathname = request.nextUrl.pathname
+
+    // Shopier Callback Rewrite
+    // Shopier bazen direkt frontend URL'ine POST atıyor (/callback), bu da 405 hatası veriyor.
+    // Bunu yakalayıp API route'una rewrite ediyoruz.
+    if (pathname === '/callback' && request.method === 'POST') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/api/callback'
+        return NextResponse.rewrite(url)
+    }
 
     // Protected routes: /dashboard/*
     if (pathname.startsWith('/dashboard')) {
@@ -86,5 +95,6 @@ export const config = {
     matcher: [
         '/admin/:path*',
         '/dashboard/:path*',
+        '/callback', // Callback route eklendi
     ],
 }
