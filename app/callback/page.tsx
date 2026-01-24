@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { CheckCircle2, XCircle, Home, ArrowRight, ShoppingBag } from "lucide-react"
+import { redirect } from "next/navigation"
+import { CheckCircle2, XCircle, Home, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -13,10 +14,16 @@ export default async function CallbackPage({
   // URL parametrelerini okuyoruz
   const params = await searchParams
   const status = params.status
-  const orderId = params.order_id
+  const orderId = params.order_id as string | undefined
   const error = params.error
+  const product = params.product as string | undefined
 
   const isSuccess = status === "success"
+
+  // SiparisGO ürünü için onboarding sayfasına yönlendir
+  if (isSuccess && product === "siparisgo" && orderId) {
+    redirect(`/onboarding/siparisgo?order_id=${orderId}`)
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -67,10 +74,10 @@ export default async function CallbackPage({
             )}
 
             {!isSuccess && error && (
-               <div className="flex justify-between items-center py-1">
-               <span className="text-muted-foreground text-sm">Hata Kodu</span>
-               <span className="font-mono text-sm text-red-500">{error}</span>
-             </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-muted-foreground text-sm">Hata Kodu</span>
+                <span className="font-mono text-sm text-red-500">{error}</span>
+              </div>
             )}
           </div>
 

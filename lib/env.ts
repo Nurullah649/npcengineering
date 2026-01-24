@@ -8,6 +8,10 @@ const envSchema = z.object({
     // Shopier (Required - server only)
     SHOPIER_API_KEY: z.string().min(1, 'SHOPIER_API_KEY zorunludur'),
     SHOPIER_API_SECRET: z.string().min(1, 'SHOPIER_API_SECRET zorunludur'),
+
+    // SiparisGO (Optional - for cafe onboarding)
+    SIPARISGO_SUPABASE_URL: z.string().url().optional(),
+    SIPARISGO_SUPABASE_SERVICE_KEY: z.string().optional(),
 })
 
 // Validate environment variables at build/start time

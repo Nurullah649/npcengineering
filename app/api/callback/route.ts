@@ -72,13 +72,43 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       });
 
-      // TODO: Veritabanında sipariş durumunu "Ödendi" olarak güncelleyin.
-      // await db.orders.update({ where: { id: paymentResult.order_id }, data: { status: 'PAID' } });
+      // Sipariş durumunu "paid" olarak güncelle ve ürün slug'ını al
+      let productSlug = '';
+      try {
+        // Supabase client oluştur (server-side)
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        // Order'ı bul ve product slug'ını al
+        const { data: order } = await supabase
+          .from('orders')
+          .select('id, product_id, products(slug)')
+          .eq('shopier_order_id', paymentResult.order_id)
+          .single();
+
+        if (order) {
+          productSlug = (order.products as any)?.slug || '';
+
+          // Sipariş durumunu güncelle
+          await supabase
+            .from('orders')
+            .update({ status: 'paid', updated_at: new Date().toISOString() })
+            .eq('id', order.id);
+        }
+      } catch (dbError) {
+        console.error('[Shopier Callback] DB update error:', dbError);
+      }
 
       // Kullanıcıyı Başarılı Sayfasına Yönlendir
       const redirectUrl = new URL('/callback', request.url);
       redirectUrl.searchParams.set('status', 'success');
       redirectUrl.searchParams.set('order_id', paymentResult.order_id || '');
+      if (productSlug) {
+        redirectUrl.searchParams.set('product', productSlug);
+      }
 
       return NextResponse.redirect(redirectUrl);
     } else {
