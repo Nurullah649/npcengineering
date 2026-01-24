@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/lib/supabase';
@@ -39,6 +39,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

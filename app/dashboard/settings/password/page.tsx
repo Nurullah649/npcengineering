@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Loader2, KeyRound, Save } from 'lucide-react'
+import { Loader2, Lock, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -40,7 +40,10 @@ const formSchema = z.object({
 
 export default function PasswordPage() {
     const router = useRouter()
-    const [saving, setSaving] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+    const [showNewPassword, setShowNewPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -52,7 +55,7 @@ export default function PasswordPage() {
     })
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
-        setSaving(true)
+        setLoading(true)
         try {
             // Önce mevcut kullanıcıyı al
             const { data: { user } } = await supabase.auth.getUser()
@@ -89,7 +92,7 @@ export default function PasswordPage() {
             console.error(error)
             toast.error(error.message || 'Şifre güncellenirken bir hata oluştu.')
         } finally {
-            setSaving(false)
+            setLoading(false)
         }
     }
 
@@ -105,7 +108,7 @@ export default function PasswordPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <KeyRound className="h-5 w-5" />
+                        <Lock className="h-5 w-5" />
                         Şifre Güncelleme
                     </CardTitle>
                     <CardDescription>
@@ -122,7 +125,29 @@ export default function PasswordPage() {
                                     <FormItem>
                                         <FormLabel>Mevcut Şifre</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="••••••••" {...field} />
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="••••••••"
+                                                    type={showCurrentPassword ? "text" : "password"}
+                                                    className="pl-10 pr-10"
+                                                    {...field}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
+                                                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                                >
+                                                    {showCurrentPassword ? (
+                                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                    <span className="sr-only">{showCurrentPassword ? "Gizle" : "Göster"}</span>
+                                                </Button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -136,7 +161,29 @@ export default function PasswordPage() {
                                     <FormItem>
                                         <FormLabel>Yeni Şifre</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="••••••••" {...field} />
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="••••••••"
+                                                    type={showNewPassword ? "text" : "password"}
+                                                    className="pl-10 pr-10"
+                                                    {...field}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
+                                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                                >
+                                                    {showNewPassword ? (
+                                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                    <span className="sr-only">{showNewPassword ? "Gizle" : "Göster"}</span>
+                                                </Button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                         <p className="text-xs text-muted-foreground">
@@ -153,17 +200,46 @@ export default function PasswordPage() {
                                     <FormItem>
                                         <FormLabel>Yeni Şifre Tekrar</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="••••••••" {...field} />
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="••••••••"
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    className="pl-10 pr-10"
+                                                    {...field}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
+                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                >
+                                                    {showConfirmPassword ? (
+                                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                    <span className="sr-only">{showConfirmPassword ? "Gizle" : "Göster"}</span>
+                                                </Button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-
-                            <Button type="submit" disabled={saving}>
-                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <Save className="mr-2 h-4 w-4" />
-                                Şifreyi Güncelle
+                            <Button type="submit" disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Güncelleniyor...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="mr-2 h-4 w-4" />
+                                        Şifreyi Güncelle
+                                    </>
+                                )}
                             </Button>
                         </form>
                     </Form>
@@ -172,3 +248,4 @@ export default function PasswordPage() {
         </div>
     )
 }
+

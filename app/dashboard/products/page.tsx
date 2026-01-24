@@ -103,12 +103,20 @@ export default function ProductsPage() {
                                             Görüntüle
                                         </Link>
                                     </Button>
-                                    <Button variant="outline" disabled>
-                                        <Download className="h-4 w-4" />
-                                    </Button>
+                                    {product.slug === 'siparisgo' ? (
+                                        <Button variant="outline" asChild>
+                                            <Link href={`/onboarding/siparisgo?order_id=${product.id}`}>
+                                                Kurulum
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <Button variant="outline" disabled>
+                                            <Download className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                 </div>
                                 <p className="text-xs text-muted-foreground text-center">
-                                    İndirme linki yakında eklenecek
+                                    {product.slug === 'siparisgo' ? 'Kurulum yaparak kullanmaya başlayın' : 'İndirme linki yakında eklenecek'}
                                 </p>
                             </CardContent>
                         </Card>

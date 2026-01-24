@@ -128,8 +128,8 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         // 5. Slug oluştur
         const slug = await generateUniqueSlug(formData.cafeName)
 
-        // 6. Şifreyi hashle (Cafes tablosu için - eğer custom auth kullanılıyorsa)
-        const hashedPassword = await bcrypt.hash(formData.password, 12)
+        // 6. Şifreyi hashle (SADECE yorum satırı - SiparisGO düz metin istiyor)
+        // const hashedPassword = await bcrypt.hash(formData.password, 12)
 
         // 7. SiparisGO'da Auth User oluştur (veya mevcut varsa al)
         // Cafes tablosundaki owner_id -> auth.users(id) referansı için gerekli
@@ -168,6 +168,8 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30)
 
         // 9. Cafes tablosuna insert
+        // UYARI: SiparisGO sistemi şu anda şifreleri düz metin olarak bekliyor.
+        // Güvenlik riski oluşturur ancak sistem gereksinimi bu yönde.
         const { data: newCafe, error: insertError } = await siparisgoDb
             .from('cafes')
             .insert({
@@ -175,7 +177,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                 slug: slug,
                 owner_id: ownerId, // SiparisGO Auth ID'sini kullanıyoruz
                 username: formData.username.toLowerCase().trim(),
-                password: hashedPassword, // Custom auth için saklıyoruz
+                password: formData.password, // Düz metin olarak saklıyoruz (SiparisGO gereksinimi)
                 role: 'admin',
                 is_active: true,
                 subscription_end_date: subscriptionEndDate.toISOString(),

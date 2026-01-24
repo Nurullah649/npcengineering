@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { createCafe } from '../actions'
 import { toast } from 'sonner'
-import { Loader2, Store, User, Lock, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Loader2, Store, User, Lock, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,6 +48,9 @@ function OnboardingContent() {
         password: '',
         confirmPassword: ''
     })
+
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     // Validation state
     const [errors, setErrors] = useState<Record<string, string>>({})
@@ -288,13 +291,27 @@ function OnboardingContent() {
                                 <Input
                                     id="password"
                                     name="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
-                                    className="pl-10"
+                                    className="pl-10 pr-10"
                                     value={formData.password}
                                     onChange={handleInputChange}
                                     disabled={submitting}
                                 />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    <span className="sr-only">{showPassword ? "Gizle" : "Göster"}</span>
+                                </Button>
                             </div>
                             {errors.password && (
                                 <p className="text-sm text-destructive">{errors.password}</p>
@@ -312,13 +329,27 @@ function OnboardingContent() {
                                 <Input
                                     id="confirmPassword"
                                     name="confirmPassword"
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     placeholder="••••••••"
-                                    className="pl-10"
+                                    className="pl-10 pr-10"
                                     value={formData.confirmPassword}
                                     onChange={handleInputChange}
                                     disabled={submitting}
                                 />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                    {showConfirmPassword ? (
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    <span className="sr-only">{showConfirmPassword ? "Gizle" : "Göster"}</span>
+                                </Button>
                             </div>
                             {errors.confirmPassword && (
                                 <p className="text-sm text-destructive">{errors.confirmPassword}</p>
