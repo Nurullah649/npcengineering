@@ -1,9 +1,12 @@
 import { createBrowserClient } from '@supabase/ssr'
-import { env } from './env'
 
-// Client-side Supabase client (browser only)
-// Environment variables validated by env.ts at startup
-export const supabase = createBrowserClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+// Client-side Supabase client
+// NOT: env.ts kullanılamaz çünkü server-only değişkenleri içeriyor
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase environment variables are missing')
+}
+
+export const supabase = createBrowserClient(supabaseUrl, supabaseKey)
