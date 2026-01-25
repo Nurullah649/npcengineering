@@ -130,16 +130,14 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         // 4. Username benzersizliğini kontrol et
         const { data: existingCafe } = await siparisgoDb
             .from('cafes')
-            .select('id')
+            .select('id, owner_id')
             .eq('username', formData.username.toLowerCase())
             .single()
 
-        if (existingCafe) {
-            return {
-                success: false,
-                error: 'Bu kullanıcı adı zaten kullanımda. Lütfen farklı bir kullanıcı adı seçin.'
-            }
-        }
+        // CONFLICT LOGIC:
+        // Eğer kullanıcı adı varsa hemen hata vermiyoruz.
+        // Belki bu kullanıcı adı ZATEN bu kullanıcıya aittir (Recovery durumu).
+        // Aşağıda ownerId belirlendikten sonra kontrol edeceğiz.
 
         // 5. Slug oluştur
         const slug = await generateUniqueSlug(formData.cafeName)
@@ -281,6 +279,15 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
 
         const subscriptionEndDate = new Date()
         subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + durationMonths)
+
+        // *** SON KONTROL ***
+        // Eğer username doluysa ve sahibi ben değilsem -> HATA
+        if (existingCafe && existingCafe.owner_id !== ownerId) {
+            return {
+                success: false,
+                error: 'Bu kullanıcı adı zaten kullanımda. Lütfen farklı bir kullanıcı adı seçin.'
+            }
+        }
 
         // 9. Cafes tablosuna insert
         // UYARI: SiparisGO sistemi şu anda şifreleri düz metin olarak bekliyor.
