@@ -324,13 +324,27 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
 
         // 10. NPC Engineering subscriptions tablosuna kayıt ekle
         // Bu sayede aboneliklerim sayfasında görünecek
-        if (updatedOrder) {
-            const { data: newSub } = await npcClient
+        // 10. NPC Engineering subscriptions tablosuna kayıt ekle veya güncelle
+        let subId: string | null = null;
+        const currentOrderId = updatedOrder?.id || order.id;
+        const currentProductId = updatedOrder?.product_id || (order as any).product_id;
+
+        // Önce var olan aboneliği kontrol et
+        const { data: existingSub } = await npcClient
+            .from('subscriptions')
+            .select('id')
+            .eq('order_id', currentOrderId)
+            .maybeSingle();
+
+        if (existingSub) {
+            subId = existingSub.id;
+        } else {
+            const { data: newSub, error: subError } = await npcClient
                 .from('subscriptions')
                 .insert({
                     user_id: user.id,
-                    product_id: updatedOrder.product_id,
-                    order_id: updatedOrder.id,
+                    product_id: currentProductId,
+                    order_id: currentOrderId,
                     start_date: new Date().toISOString(),
                     end_date: subscriptionEndDate.toISOString(),
                     status: 'active',
@@ -339,21 +353,32 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                 .select('id')
                 .single()
 
-            // 11. Kullanıcı hesap bilgilerini sakla (Aboneliklerim sayfasında göstermek için)
             if (newSub) {
-                await npcClient
-                    .from('user_product_accounts')
-                    .insert({
-                        subscription_id: newSub.id,
-                        user_id: user.id,
-                        product_id: updatedOrder.product_id,
-                        username: formData.username.toLowerCase(),
-                        password_encrypted: Buffer.from(formData.password).toString('base64'), // Basit encoding
-                        additional_info: {
-                            password_set: true,
-                            panel_url: 'https://siparisgo.npcengineering.com/login' // Panel giriş linki
-                        }
-                    })
+                subId = newSub.id;
+            } else if (subError) {
+                console.error('Subscription creation error:', subError);
+            }
+        }
+
+        // 11. Kullanıcı hesap bilgilerini sakla (Aboneliklerim sayfasında göstermek için)
+        if (subId) {
+            // Hesap oluştur
+            const { error: accError } = await npcClient
+                .from('user_product_accounts')
+                .insert({
+                    subscription_id: subId,
+                    user_id: user.id,
+                    product_id: currentProductId,
+                    username: formData.username.toLowerCase(),
+                    password_encrypted: Buffer.from(formData.password).toString('base64'),
+                    additional_info: {
+                        password_set: true,
+                        panel_url: 'https://siparisgo.npcengineering.com/login'
+                    }
+                })
+
+            if (accError) {
+                console.error('Account create error:', accError)
             }
         }
 

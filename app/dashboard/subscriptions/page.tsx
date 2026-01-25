@@ -302,6 +302,7 @@ export default function SubscriptionsPage() {
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                        <AlertTriangle className="h-8 w-8 text-orange-600" />
                                         <div className="text-center">
                                             <p className="text-sm font-medium text-orange-600 dark:text-orange-400">
                                                 Hesap kurulumu tamamlanmadı
