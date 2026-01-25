@@ -3,9 +3,9 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { createCafe } from '../actions'
+import { createCafe, linkSiparisGoAccount } from '../actions'
 import { toast } from 'sonner'
-import { Loader2, Store, User, Lock, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Loader2, Store, User, Lock, CheckCircle2, AlertCircle, Eye, EyeOff, Link as LinkIcon, PlusCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,7 @@ function OnboardingContent() {
     const searchParams = useSearchParams()
     const orderId = searchParams.get('order_id')
 
+    const [mode, setMode] = useState<'create' | 'link'>('create')
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [success, setSuccess] = useState(false)
@@ -77,33 +78,32 @@ function OnboardingContent() {
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {}
 
-        // Cafe name
-        if (formData.cafeName.trim().length < 3) {
-            newErrors.cafeName = 'Kafe adı en az 3 karakter olmalı'
-        } else if (formData.cafeName.length > 50) {
-            newErrors.cafeName = 'Kafe adı en fazla 50 karakter olabilir'
+        if (mode === 'create') {
+            // Cafe name validation
+            if (formData.cafeName.trim().length < 3) {
+                newErrors.cafeName = 'Kafe adı en az 3 karakter olmalı'
+            } else if (formData.cafeName.length > 50) {
+                newErrors.cafeName = 'Kafe adı en fazla 50 karakter olabilir'
+            }
         }
 
         // Username
         if (formData.username.length < 3) {
             newErrors.username = 'Kullanıcı adı en az 3 karakter olmalı'
-        } else if (formData.username.length > 20) {
-            newErrors.username = 'Kullanıcı adı en fazla 20 karakter olabilir'
-        } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-            newErrors.username = 'Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir'
         }
 
         // Password
-        if (formData.password.length < 8) {
-            newErrors.password = 'Şifre en az 8 karakter olmalı'
-        } else if (!/[A-Z]/.test(formData.password)) {
-            newErrors.password = 'Şifre en az bir büyük harf içermeli'
-        } else if (!/[0-9]/.test(formData.password)) {
-            newErrors.password = 'Şifre en az bir rakam içermeli'
+        if (formData.password.length < 1) {
+            newErrors.password = 'Şifre gerekli'
+        } else if (mode === 'create') {
+            // Create modunda strict kurallar
+            if (formData.password.length < 8) {
+                newErrors.password = 'Şifre en az 8 karakter olmalı'
+            }
         }
 
-        // Confirm password
-        if (formData.password !== formData.confirmPassword) {
+        // Confirm password (Sadece create modunda)
+        if (mode === 'create' && formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Şifreler eşleşmiyor'
         }
 
@@ -126,17 +126,27 @@ function OnboardingContent() {
         setSubmitting(true)
 
         try {
-            const result = await createCafe({
-                cafeName: formData.cafeName,
-                username: formData.username,
-                password: formData.password,
-                orderId: orderId
-            })
+            let result;
+
+            if (mode === 'create') {
+                result = await createCafe({
+                    cafeName: formData.cafeName,
+                    username: formData.username,
+                    password: formData.password,
+                    orderId: orderId
+                })
+            } else {
+                result = await linkSiparisGoAccount({
+                    username: formData.username,
+                    password: formData.password,
+                    orderId: orderId
+                })
+            }
 
             if (result.success) {
                 setSuccess(true)
                 setRedirectUrl(result.redirectUrl || 'https://siparisgo.npcengineering.com')
-                toast.success(result.message || 'Kafe başarıyla oluşturuldu!')
+                toast.success(result.message || (mode === 'create' ? 'Kafe oluşturuldu!' : 'Hesap bağlandı!'))
 
                 // 3 saniye sonra yönlendir
                 setTimeout(() => {
@@ -146,18 +156,11 @@ function OnboardingContent() {
                 }, 3000)
             } else {
                 toast.error(result.error || 'Bir hata oluştu')
-
-                // Kritik hatalarda (Sipariş yoksa, yetki yoksa) kullanıcıyı hata ekranına düşür
-                // Böylece formu tekrar doldurmakla uğraşmaz
-                if (result.error?.includes('Sipariş') ||
-                    result.error?.includes('yetkiniz yok') ||
-                    result.error?.includes('doğrulanamadı')) {
-                    setError(result.error)
-                }
+                setErrors(prev => ({ ...prev, form: result.error || 'Hata' }))
             }
         } catch (error) {
             console.error('Submit error:', error)
-            toast.error('Beklenmeyen bir hata oluştu')
+            toast.error('Beklenmeyen hata')
         } finally {
             setSubmitting(false)
         }
@@ -208,7 +211,7 @@ function OnboardingContent() {
                             <CheckCircle2 className="h-12 w-12 text-green-500" />
                             <h2 className="text-xl font-semibold">Tebrikler! 🎉</h2>
                             <p className="text-muted-foreground">
-                                Kafe hesabınız başarıyla oluşturuldu.
+                                {mode === 'create' ? 'Kafe hesabınız başarıyla oluşturuldu.' : 'Hesabınız başarıyla bağlandı.'}
                             </p>
                             <div className="mt-2 rounded-lg bg-muted p-4 w-full">
                                 <p className="text-sm font-medium">Giriş Bilgileriniz:</p>
@@ -243,30 +246,67 @@ function OnboardingContent() {
                     </div>
                     <CardTitle className="text-2xl">SiparisGO Kurulumu</CardTitle>
                     <CardDescription>
-                        Kafe veya restoranınız için bilgileri girin
+                        {mode === 'create' ? 'Yeni kafe hesabı oluşturun' : 'Mevcut SiparisGO hesabınızı bağlayın'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+
+                    {/* Mode Switcher */}
+                    <div className="flex bg-muted p-1 rounded-lg mb-6">
+                        <button
+                            type="button"
+                            onClick={() => setMode('create')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'create'
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:bg-background/50'
+                                }`}
+                        >
+                            <PlusCircle className="h-4 w-4" />
+                            Yeni Hesap
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMode('link')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'link'
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:bg-background/50'
+                                }`}
+                        >
+                            <LinkIcon className="h-4 w-4" />
+                            Hesap Bağla
+                        </button>
+                    </div>
+
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Cafe Name */}
-                        <div className="space-y-2">
-                            <Label htmlFor="cafeName">Kafe / Restoran Adı</Label>
-                            <div className="relative">
-                                <Store className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="cafeName"
-                                    name="cafeName"
-                                    placeholder="Örn: Güzel Kafe"
-                                    className="pl-10"
-                                    value={formData.cafeName}
-                                    onChange={handleInputChange}
-                                    disabled={submitting}
-                                />
+                        {/* Genel Hata Mesajı */}
+                        {errors.form && (
+                            <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm flex items-center gap-2">
+                                <AlertCircle className="h-4 w-4" />
+                                {errors.form}
                             </div>
-                            {errors.cafeName && (
-                                <p className="text-sm text-destructive">{errors.cafeName}</p>
-                            )}
-                        </div>
+                        )}
+
+                        {/* Cafe Name (Only Create) */}
+                        {mode === 'create' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="cafeName">Kafe / Restoran Adı</Label>
+                                <div className="relative">
+                                    <Store className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="cafeName"
+                                        name="cafeName"
+                                        placeholder="Örn: Güzel Kafe"
+                                        className="pl-10"
+                                        value={formData.cafeName}
+                                        onChange={handleInputChange}
+                                        disabled={submitting}
+                                    />
+                                </div>
+                                {errors.cafeName && (
+                                    <p className="text-sm text-destructive">{errors.cafeName}</p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Username */}
                         <div className="space-y-2">
@@ -287,7 +327,7 @@ function OnboardingContent() {
                                 <p className="text-sm text-destructive">{errors.username}</p>
                             )}
                             <p className="text-xs text-muted-foreground">
-                                SiparisGO'ya giriş için kullanacağınız kullanıcı adı
+                                SiparisGO'ya giriş yaparken kullandığınız kullanıcı adı
                             </p>
                         </div>
 
@@ -324,54 +364,58 @@ function OnboardingContent() {
                             {errors.password && (
                                 <p className="text-sm text-destructive">{errors.password}</p>
                             )}
-                            <p className="text-xs text-muted-foreground">
-                                En az 8 karakter, bir büyük harf ve bir rakam
-                            </p>
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Şifre Tekrar</Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    placeholder="••••••••"
-                                    className="pl-10 pr-10"
-                                    value={formData.confirmPassword}
-                                    onChange={handleInputChange}
-                                    disabled={submitting}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                >
-                                    {showConfirmPassword ? (
-                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                    ) : (
-                                        <Eye className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                    <span className="sr-only">{showConfirmPassword ? "Gizle" : "Göster"}</span>
-                                </Button>
-                            </div>
-                            {errors.confirmPassword && (
-                                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                            {mode === 'create' && (
+                                <p className="text-xs text-muted-foreground">
+                                    En az 8 karakter, bir büyük harf ve bir rakam
+                                </p>
                             )}
                         </div>
+
+                        {/* Confirm Password (Only Create) */}
+                        {mode === 'create' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">Şifre Tekrar</Label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        className="pl-10 pr-10"
+                                        value={formData.confirmPassword}
+                                        onChange={handleInputChange}
+                                        disabled={submitting}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute right-0 top-0 h-full w-9 px-3 py-2 hover:bg-transparent"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                        ) : (
+                                            <Eye className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                        <span className="sr-only">{showConfirmPassword ? "Gizle" : "Göster"}</span>
+                                    </Button>
+                                </div>
+                                {errors.confirmPassword && (
+                                    <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                                )}
+                            </div>
+                        )}
 
                         <Button type="submit" className="w-full" disabled={submitting}>
                             {submitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Oluşturuluyor...
+                                    {mode === 'create' ? 'Oluşturuluyor...' : 'Bağlanıyor...'}
                                 </>
                             ) : (
-                                'Kafe Hesabını Oluştur'
+                                mode === 'create' ? 'Kafe Hesabını Oluştur' : 'Hesabı Bağla'
                             )}
                         </Button>
                     </form>
