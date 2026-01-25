@@ -57,9 +57,22 @@ interface UserAccount {
     subscription_id: string
     username: string
     password_masked: string
+    password_encrypted?: string
     has_password: boolean
     additional_info?: {
         panel_url?: string
+    }
+}
+
+// Base64 decode helper (Safe for SSR & Browser)
+const decodePassword = (encrypted: string) => {
+    try {
+        if (typeof window !== 'undefined') {
+            return window.atob(encrypted)
+        }
+        return Buffer.from(encrypted, 'base64').toString('utf-8')
+    } catch {
+        return 'Çözülemedi'
     }
 }
 
@@ -206,6 +219,9 @@ export default function SubscriptionsPage() {
                 {subscriptions.map((subscription) => {
                     const account = accounts[subscription.id]
                     const showPassword = showPasswords[subscription.id]
+                    const decodedPassword = account?.password_encrypted
+                        ? decodePassword(account.password_encrypted)
+                        : (account?.has_password ? 'gizli-sifre' : 'Belirlenmedi')
 
                     return (
                         <Card key={subscription.id} className="overflow-hidden">
@@ -270,7 +286,7 @@ export default function SubscriptionsPage() {
                                                 <span className="text-sm text-muted-foreground">Şifre</span>
                                                 <div className="flex items-center gap-2">
                                                     <code className="text-sm font-mono bg-background px-2 py-1 rounded">
-                                                        {showPassword ? 'gizli-sifre' : '••••••••'}
+                                                        {showPassword ? decodedPassword : '••••••••'}
                                                     </code>
                                                     <Button
                                                         variant="ghost"
