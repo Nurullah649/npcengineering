@@ -146,6 +146,14 @@ function OnboardingContent() {
                 }, 3000)
             } else {
                 toast.error(result.error || 'Bir hata oluştu')
+
+                // Kritik hatalarda (Sipariş yoksa, yetki yoksa) kullanıcıyı hata ekranına düşür
+                // Böylece formu tekrar doldurmakla uğraşmaz
+                if (result.error?.includes('Sipariş') ||
+                    result.error?.includes('yetkiniz yok') ||
+                    result.error?.includes('doğrulanamadı')) {
+                    setError(result.error)
+                }
             }
         } catch (error) {
             console.error('Submit error:', error)

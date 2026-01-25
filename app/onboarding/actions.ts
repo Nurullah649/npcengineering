@@ -61,6 +61,10 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
             }
         }
 
+        // UUID Format Kontrolü (Manuel testlerde kolaylık için)
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(formData.orderId);
+        const idField = isUUID ? 'id' : 'shopier_order_id';
+
         // 2. Mevcut kullanıcıyı doğrula
         const npcClient = await getNpcEngineeringClient()
         const { data: { user }, error: authError } = await npcClient.auth.getUser()
@@ -76,8 +80,8 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         const { data: order, error: orderError } = await npcClient
             .from('orders')
             .select('id, user_id, status, products(slug)')
-            .eq('shopier_order_id', formData.orderId)
-            .single()
+            .eq(idField, formData.orderId)
+            .maybeSingle()
 
         if (orderError || !order) {
             console.error('Order fetch error:', orderError)
@@ -190,7 +194,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                     duration_months
                 )
             `)
-            .eq('shopier_order_id', formData.orderId)
+            .eq(idField, formData.orderId)
             .maybeSingle();
 
         if (!orderData) {
@@ -246,7 +250,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                 status: 'completed',
                 updated_at: new Date().toISOString()
             })
-            .eq('shopier_order_id', formData.orderId)
+            .eq(idField, formData.orderId)
             .select('id, product_id')
             .maybeSingle()
 
