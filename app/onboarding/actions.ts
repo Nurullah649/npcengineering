@@ -191,7 +191,14 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                 )
             `)
             .eq('shopier_order_id', formData.orderId)
-            .single();
+            .maybeSingle();
+
+        if (!orderData) {
+            return {
+                success: false,
+                error: 'Sipariş bilgisi doğrulanamadı. Lütfen geçerli bir sipariş numarası ile tekrar deneyin.'
+            }
+        }
 
         // TypeScript için güvenli erişim (join sonucu tek obje veya array olabilir ama single dediğimiz için obje)
         // @ts-ignore - Supabase type generation güncel olmayabilir
@@ -241,7 +248,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
             })
             .eq('shopier_order_id', formData.orderId)
             .select('id, product_id')
-            .single()
+            .maybeSingle()
 
         // 10. NPC Engineering subscriptions tablosuna kayıt ekle
         // Bu sayede aboneliklerim sayfasında görünecek
