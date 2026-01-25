@@ -267,11 +267,15 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                             </span>
                         </div>
 
-                        {(subscription.is_expiring_soon || subscription.is_expired) && (
-                            <Button className="w-full gap-2">
-                                <RefreshCw className="h-4 w-4" />
-                                Süre Uzat
-                            </Button>
+                        {subscription.products?.slug && (
+                            <div className="pt-2">
+                                <Button className="w-full gap-2" asChild>
+                                    <Link href={`/products/${subscription.products.slug}/packages`}>
+                                        <RefreshCw className="h-4 w-4" />
+                                        Paket Değiştir / Süre Uzat
+                                    </Link>
+                                </Button>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
@@ -324,12 +328,22 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                             </p>
                         </div>
                     ) : (
-                        <div className="text-center py-8">
-                            <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="font-medium mb-2">Hesap Hazırlanıyor</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Hesap bilgileriniz kısa süre içinde burada görünecektir.
-                            </p>
+                        <div className="flex flex-col items-center justify-center gap-3 p-6 rounded-lg bg-orange-500/10 border border-orange-500/20 text-center">
+                            <AlertTriangle className="h-12 w-12 text-orange-600 mb-2" />
+                            <div>
+                                <h3 className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                                    Hesap Kurulumu Tamamlanmadı
+                                </h3>
+                                <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
+                                    Satın aldığınız ürünü kullanmaya başlamak için hesap kurulumunu tamamlamanız gerekmektedir.
+                                </p>
+                            </div>
+                            <Button variant="default" size="lg" className="bg-orange-600 hover:bg-orange-700 text-white gap-2 mt-2" asChild>
+                                <Link href={`/onboarding/siparisgo?order_id=${subscription.order_id}`}>
+                                    <Settings className="h-4 w-4" />
+                                    Hemen Kurulum Yap
+                                </Link>
+                            </Button>
                         </div>
                     )}
                 </CardContent>
