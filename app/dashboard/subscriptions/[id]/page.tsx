@@ -75,16 +75,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
         const init = async () => {
             const { id } = await params
 
-            // Otomatik Veri Onarımı (Eksik paket bilgisi varsa düzelt)
-            try {
-                await fetch('/api/fix-subscription-data', {
-                    method: 'POST',
-                    body: JSON.stringify({ subscription_id: id })
-                })
-            } catch (e) {
-                console.error('Auto fix error:', e)
-            }
-
+            // Auto-fix API'si server config hatası verdiği için kaldırıldı
+            // Verileri UI'da hesaplayarak göstereceğiz
             await fetchSubscription(id)
         }
         init()
@@ -215,13 +207,24 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                         </div>
                         <Separator />
                         <div className="flex justify-between">
+                            <span className="text-muted-foreground">Paket</span>
+                            <span className="font-medium">{subscription.packages?.name || 'Standart Paket'}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between">
                             <span className="text-muted-foreground">Süre</span>
-                            <span className="font-medium">{subscription.packages?.duration_months} Ay</span>
+                            <span className="font-medium">
+                                {subscription.packages?.duration_months ||
+                                    Math.round((new Date(subscription.end_date).getTime() - new Date(subscription.start_date).getTime()) / (1000 * 60 * 60 * 24 * 30)) || 1
+                                } Ay
+                            </span>
                         </div>
                         <Separator />
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Ödenen Tutar</span>
-                            <span className="font-medium">₺{subscription.packages?.price}</span>
+                            <span className="font-medium">
+                                {subscription.packages?.price ? `₺${subscription.packages.price}` : 'Plan Dahilinde'}
+                            </span>
                         </div>
 
                         {subscription.products?.slug && (
