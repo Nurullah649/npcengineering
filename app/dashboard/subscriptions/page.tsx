@@ -27,7 +27,7 @@ interface Subscription {
     id: string
     user_id: string
     product_id: string
-    package_id: string
+    package_id: string | null
     order_id: string
     start_date: string
     end_date: string
@@ -43,13 +43,13 @@ interface Subscription {
         name: string
         slug: string
         image_url?: string
-    }
+    } | null
     packages: {
         id: string
         name: string
         duration_months: number
         price: number
-    }
+    } | null
 }
 
 interface UserAccount {
@@ -210,7 +210,7 @@ export default function SubscriptionsPage() {
                                                 {subscription.products?.name || 'Ürün'}
                                             </CardTitle>
                                             <CardDescription>
-                                                {subscription.packages?.name} Paket
+                                                {subscription.packages?.name ? `${subscription.packages.name} Paket` : 'Standart Abonelik'}
                                             </CardDescription>
                                         </div>
                                     </div>
