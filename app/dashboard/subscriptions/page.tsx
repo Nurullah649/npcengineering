@@ -301,8 +301,20 @@ export default function SubscriptionsPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-3 rounded-lg bg-muted/50 text-center text-sm text-muted-foreground">
-                                        Hesap bilgileri henüz oluşturulmamış
+                                    <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                        <div className="text-center">
+                                            <p className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                                                Hesap kurulumu tamamlanmadı
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Kullanmaya başlamak için kurulum yapmalısınız.
+                                            </p>
+                                        </div>
+                                        <Button size="sm" variant="default" className="w-full bg-orange-600 hover:bg-orange-700 text-white" asChild>
+                                            <a href={`/onboarding/siparisgo?order_id=${subscription.order_id}`}>
+                                                Kurulumu Tamamla
+                                            </a>
+                                        </Button>
                                     </div>
                                 )}
 

@@ -108,11 +108,23 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         }
 
         // Order zaten completed ise tekrar kullanılamaz
+        // Order zaten completed ise tekrar kullanılamaz
         if (order.status === 'completed') {
-            return {
-                success: false,
-                error: 'Bu sipariş için kafe kaydı zaten yapılmış.'
+            // RECOVERY MODE:
+            // Eğer sipariş completed görünüyor ama user_product_accounts tablosunda kayıt yoksa
+            // (örneğin önceki işlem yarıda kaldıysa), tekrar kuruluma izin ver.
+            const { count } = await npcClient
+                .from('user_product_accounts')
+                .select('*', { count: 'exact', head: true })
+                .eq('order_id', order.id) // Order ID ile kontrol daha güvenli
+
+            if (count && count > 0) {
+                return {
+                    success: false,
+                    error: 'Bu sipariş için kafe kaydı zaten yapılmış.'
+                }
             }
+            // Count 0 ise devam et...
         }
 
         // 4. Username benzersizliğini kontrol et
