@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -168,6 +169,7 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
       }
     } catch (error) {
       console.error("Ödeme hatası:", error)
+      toast.error("Ödeme başlatılırken bir sorun oluştu.")
       alert("Bir bağlantı hatası oluştu.")
       setIsLoading(false)
     }

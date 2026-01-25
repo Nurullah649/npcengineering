@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
     ArrowLeft,
     Check,
@@ -88,6 +89,7 @@ export default function PackagesPage({ params }: { params: Promise<{ slug: strin
             }
         } catch (error) {
             console.error('Paketler yüklenemedi:', error)
+            toast.error('Paket bilgileri yüklenirken bir hata oluştu.')
         } finally {
             setLoading(false)
         }

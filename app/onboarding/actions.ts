@@ -171,14 +171,70 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                 }
             })
 
-            if (createUserError || !newUser.user) {
-                console.error('SiparisGO auth user creation error:', createUserError)
+            if (createUserError) {
+                // Eğer kullanıcı zaten varsa (Email already registered hatası)
+                // Bu durumda var olan kullanıcıyı bulup ona bağlamalıyız
+                if (createUserError.message?.includes('registered') || createUserError.message?.includes('already exists')) {
+                    console.log('SiparisGO user already exists, trying to find by scanning...');
+
+                    // Fallback: Kullanıcıyı bulmak için listUsers scan (Verimsiz ama tek çare)
+                    // Not: Bu sadece profiles tablosunda email bulunamadığında çalışır
+                    let foundUser = null;
+                    let page = 1;
+                    const perPage = 50;
+
+                    while (!foundUser) {
+                        const { data: { users }, error } = await siparisgoDb.auth.admin.listUsers({
+                            page: page,
+                            perPage: perPage
+                        });
+
+                        if (error || !users || users.length === 0) break;
+
+                        foundUser = users.find(u => u.email?.toLowerCase() === user.email?.toLowerCase());
+
+                        if (foundUser) break;
+                        if (users.length < perPage) break; // Son sayfa
+                        page++;
+                    }
+
+                    if (foundUser) {
+                        ownerId = foundUser.id;
+
+                        // ÖNEMLİ: Mevcut kullanıcının şifresini formdan gelen yeni şifreyle güncelle
+                        // Böylece hem kullanıcı yeni belirlediği şifreyi kullanabilir,
+                        // hem de panelde gösterilen şifre doğru olur.
+                        const { error: updateError } = await siparisgoDb.auth.admin.updateUserById(ownerId, {
+                            password: formData.password
+                        });
+
+                        if (updateError) {
+                            console.error('Password update error:', updateError);
+                            // Şifre güncellenemese bile devam et, ama logla
+                        }
+                    } else {
+                        // Bulunamadıysa hata dön
+                        return {
+                            success: false,
+                            error: 'SiparisGO hesabınız mevcut ancak erişilemiyor. Lütfen destek ile iletişime geçin.'
+                        }
+                    }
+                } else {
+                    // Başka bir hata
+                    console.error('SiparisGO auth user creation error:', createUserError)
+                    return {
+                        success: false,
+                        error: 'SiparisGO kullanıcı hesabı oluşturulamadı: ' + (createUserError?.message || 'Bilinmeyen hata')
+                    }
+                }
+            } else if (newUser.user) {
+                ownerId = newUser.user.id;
+            } else {
                 return {
                     success: false,
-                    error: 'SiparisGO kullanıcı hesabı oluşturulamadı: ' + (createUserError?.message || 'Bilinmeyen hata')
+                    error: 'Kullanıcı oluşturulamadı (Bilinmeyen durum)'
                 }
             }
-            ownerId = newUser.user.id
         }
 
         // 8. Abonelik bitiş tarihini hesapla (Dinamik - Pakete göre)

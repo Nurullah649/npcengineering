@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import {
@@ -87,6 +88,7 @@ export default function SubscriptionsPage() {
             }
         } catch (error) {
             console.error('Abonelikler yüklenemedi:', error)
+            toast.error('Abonelik bilgileri yüklenirken bir hata oluştu.')
         } finally {
             setLoading(false)
         }
@@ -105,6 +107,12 @@ export default function SubscriptionsPage() {
             }
         } catch (error) {
             console.error('Hesap bilgileri yüklenemedi:', error)
+            // Hesap bilgisi kritik değil, toast göstermeyebiliriz veya sessiz geçebiliriz
+            // Ancak kullanıcı "her hatayı göster" dediği için ekleyelim
+            toast.error('Hesap detayları alınamadı.') // UI'da "Hesap Hazırlanıyor" yazdığı için belki gerekmez.
+            // Ama kullanıcı "bomboş ekrana bakıyor" dedi. 
+            // Burada "Hesap Hazırlanıyor" göründüğü için boş ekran değil.
+            // Yine de soft bir hata bildirimi iyidir.
         }
     }
 
