@@ -9,6 +9,7 @@ import {
     LayoutDashboard,
     Package,
     Receipt,
+    CreditCard,
     Settings,
     KeyRound,
     MapPin,
@@ -38,6 +39,11 @@ const sidebarItems = [
         title: 'Siparişlerim',
         href: '/dashboard/orders',
         icon: Receipt,
+    },
+    {
+        title: 'Aboneliklerim',
+        href: '/dashboard/subscriptions',
+        icon: CreditCard,
     },
     {
         title: 'Profil Ayarları',

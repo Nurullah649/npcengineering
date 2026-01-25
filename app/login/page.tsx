@@ -69,6 +69,18 @@ export default function LoginPage() {
       const searchParams = new URLSearchParams(window.location.search);
       let redirectTo = searchParams.get('redirect');
 
+      // ======== OPEN REDIRECT FIX ========
+      // Sadece internal path'lere izin ver (güvenlik)
+      const allowedPaths = ['/dashboard', '/admin', '/products', '/callback', '/onboarding'];
+      const isValidRedirect = redirectTo &&
+        /^\/[a-zA-Z0-9/_-]*$/.test(redirectTo) &&
+        allowedPaths.some(path => redirectTo!.startsWith(path));
+
+      if (!isValidRedirect) {
+        redirectTo = null; // Geçersiz redirect, varsayılana dön
+      }
+      // ===================================
+
       if (!redirectTo) {
         // Profil tablosundan rolü kontrol et
         const { data: profile } = await supabase

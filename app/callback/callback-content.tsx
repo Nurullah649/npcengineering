@@ -28,7 +28,7 @@ import { copyToClipboard } from "@/utils/copy-to-clipboard"
 
 export function CallbackContent() {
   const searchParams = useSearchParams()
-  
+
   // Shopier'den gelen parametreler
   const status = searchParams.get("status") // "success" veya "failed"
   const product = searchParams.get("product")
@@ -37,7 +37,7 @@ export function CallbackContent() {
   const orderId = searchParams.get("order_id") || `NPC-${Date.now()}`
 
   const isSuccess = status === "success"
-  
+
   // Form state
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -56,7 +56,7 @@ export function CallbackContent() {
 
   const validateForm = () => {
     const errors: typeof formErrors = {}
-    
+
     if (!username.trim()) {
       errors.username = "Kullanici adi gerekli"
     } else if (username.length < 3) {
@@ -64,39 +64,68 @@ export function CallbackContent() {
     } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       errors.username = "Sadece harf, rakam ve alt cizgi kullanilabilir"
     }
-    
+
     if (!password) {
       errors.password = "Sifre gerekli"
     } else if (password.length < 6) {
       errors.password = "Sifre en az 6 karakter olmali"
     }
-    
+
     if (!confirmPassword) {
       errors.confirmPassword = "Sifre tekrari gerekli"
     } else if (password !== confirmPassword) {
       errors.confirmPassword = "Sifreler eslesmiyor"
     }
-    
+
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
-    
+
     setIsSubmitting(true)
-    
-    // Simulate account creation
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    
-    setIsAccountCreated(true)
-    setIsSubmitting(false)
-    setCredentials({ username: "newUser", password: "newPassword123" })
+
+    try {
+      // ======== FAKE ACCOUNT FIX ========
+      // Gerçek hesap oluşturma API çağrısı
+      const response = await fetch('/api/create-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          password,
+          orderId,
+          product
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setFormErrors({ username: data.error || 'Hesap oluşturulamadı' })
+        setIsSubmitting(false)
+        return
+      }
+
+      // Başarılı - gerçek credentials'ları kullan
+      setIsAccountCreated(true)
+      setCredentials({
+        username: data.username || username,
+        password: data.password || password
+      })
+      // ===================================
+    } catch (error) {
+      console.error('Account creation error:', error)
+      setFormErrors({ username: 'Bir hata oluştu. Lütfen tekrar deneyin.' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-if (isSuccess) {
+  if (isSuccess) {
     // Hesap olusturuldu - basarili ekrani
     if (isAccountCreated) {
       return (

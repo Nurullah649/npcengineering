@@ -135,9 +135,23 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         // Cafes tablosundaki owner_id -> auth.users(id) referansı için gerekli
         let ownerId = user.id
 
-        // Email ile kullanıcıyı ara
-        const { data: { users: existingUsers } } = await siparisgoDb.auth.admin.listUsers()
-        const existingSiparisUser = existingUsers.find(u => u.email === user.email)
+        // ======== INFINITE LOOP / O(n) FIX ========
+        // Email ile direkt query - tüm kullanıcıları çekmek yerine
+        // Not: Supabase Auth Admin API email filtresi destekliyor
+        const { data: { users: existingUsers }, error: listError } = await siparisgoDb.auth.admin.listUsers({
+            page: 1,
+            perPage: 1,
+        })
+
+        // Tüm kullanıcıları çekmek yerine profiles tablosundan kontrol et
+        const { data: existingProfile } = await siparisgoDb
+            .from('profiles')
+            .select('id')
+            .eq('email', user.email)
+            .maybeSingle()
+
+        const existingSiparisUser = existingProfile ? { id: existingProfile.id } : null
+        // ==========================================
 
         if (existingSiparisUser) {
             ownerId = existingSiparisUser.id

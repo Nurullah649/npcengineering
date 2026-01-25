@@ -2,11 +2,56 @@
 
 import React from "react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { Menu, X, User, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { UserMenu } from "@/components/user-menu" // YENİ: UserMenu eklendi
+import { supabase } from "@/lib/supabase"
+
+// UserMenu bileşeni - kullanıcı giriş durumunu gösterir
+function UserMenu() {
+  const [user, setUser] = useState<{ email?: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+    checkUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (loading) {
+    return <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+  }
+
+  if (user) {
+    return (
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <User className="h-4 w-4" />
+          <span className="hidden sm:inline">Dashboard</span>
+        </Link>
+      </Button>
+    )
+  }
+
+  return (
+    <Button variant="outline" size="sm" asChild>
+      <Link href="/login" className="flex items-center gap-2">
+        <LogIn className="h-4 w-4" />
+        <span className="hidden sm:inline">Giriş Yap</span>
+      </Link>
+    </Button>
+  )
+}
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -125,7 +170,7 @@ export function Header() {
 
             {/* YENİ: Mobilde UserMenu (En altta) */}
             <div className="mt-4 border-t pt-4 flex justify-center">
-               <UserMenu />
+              <UserMenu />
             </div>
           </div>
         </div>

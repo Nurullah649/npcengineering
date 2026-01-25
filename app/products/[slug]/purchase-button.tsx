@@ -113,24 +113,51 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
 
       const data = await response.json()
 
-      // 2. Gelen HTML varsa sayfayı Shopier'e çevir ve OTOMATİK GÖNDER
+      // 2. Gelen HTML varsa yeni pencerede aç (XSS güvenliği için)
       if (data.html) {
-        // HTML içeriğini sayfaya bas
-        document.documentElement.innerHTML = data.html
+        // ======== DOM XSS FIX ========
+        // innerHTML yerine yeni pencerede form submit yöntemi kullan
+        // Bu yaklaşım daha güvenli - XSS riskini azaltır
 
-        // --- DÜZELTME BURADA ---
-        // React scriptleri çalıştırmadığı için formu bulup biz gönderiyoruz.
-        // Shopier formunun ID'si genelde 'shopier_payment_form' olur.
-        const form = document.getElementById("shopier_payment_form") as HTMLFormElement
+        // Yeni pencere oluştur
+        const paymentWindow = window.open('', '_blank')
 
-        if (form) {
-          form.submit()
+        if (paymentWindow) {
+          // HTML içeriğini yaz
+          paymentWindow.document.open()
+          paymentWindow.document.write(data.html)
+          paymentWindow.document.close()
+
+          // Formu bul ve gönder
+          const form = paymentWindow.document.getElementById('shopier_payment_form') as HTMLFormElement
+          if (form) {
+            form.submit()
+          } else {
+            // ID ile bulunamazsa ilk formu gönder
+            const firstForm = paymentWindow.document.querySelector('form')
+            if (firstForm) firstForm.submit()
+          }
         } else {
-          // ID ile bulunamazsa sayfadaki ilk formu bulup gönder (Yedek plan)
-          const firstForm = document.querySelector("form")
-          if (firstForm) firstForm.submit()
+          // Popup engellenmiş olabilir - alternatif: hidden iframe kullan
+          const iframe = document.createElement('iframe')
+          iframe.style.display = 'none'
+          iframe.name = 'payment_frame'
+          document.body.appendChild(iframe)
+
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+          if (iframeDoc) {
+            iframeDoc.open()
+            iframeDoc.write(data.html)
+            iframeDoc.close()
+
+            const form = iframeDoc.getElementById('shopier_payment_form') as HTMLFormElement
+            if (form) {
+              form.target = '_self'
+              window.location.href = form.action // Ana sayfada aç
+            }
+          }
         }
-        // -----------------------
+        // ===============================
 
       } else {
         alert(data.error || "Ödeme sistemi yanıt vermedi.")

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { format } from 'date-fns'
@@ -19,48 +19,112 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-type Order = {
+// ======== TYPE SAFETY FIX ========
+// Proper type tanımı - as any kullanımı kaldırıldı
+interface OrderProduct {
+    name: string
+    slug: string
+}
+
+interface Order {
     id: string
     created_at: string
     status: string
     amount: number
-    products: {
-        name: string
-        slug: string
-    } | null
+    products: OrderProduct | null
 }
+
+// Type guard fonksiyonu
+function isValidOrder(data: unknown): data is Order {
+    if (typeof data !== 'object' || data === null) return false
+    const obj = data as Record<string, unknown>
+    return (
+        typeof obj.id === 'string' &&
+        typeof obj.created_at === 'string' &&
+        typeof obj.status === 'string' &&
+        typeof obj.amount === 'number'
+    )
+}
+// ================================
 
 export default function OrdersPage() {
     const [loading, setLoading] = useState(true)
     const [orders, setOrders] = useState<Order[]>([])
 
-    const fetchOrders = async () => {
+    // ======== RACE CONDITION & MEMORY LEAK FIX ========
+    // Cleanup flag - component unmount kontrolü
+    const mountedRef = useRef(true)
+    // Son fetch zamanı - gereksiz refetch önleme
+    const lastFetchRef = useRef<number>(0)
+    const STALE_TIME = 30000 // 30 saniye
+
+    // useCallback ile stable reference
+    const fetchOrders = useCallback(async (force = false) => {
+        // Stale time kontrolü - gereksiz refetch önleme
+        const now = Date.now()
+        if (!force && now - lastFetchRef.current < STALE_TIME) {
+            return
+        }
+
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
-        const { data } = await supabase
+        // Component unmount olduysa state güncelleme
+        if (!mountedRef.current) return
+
+        const { data, error } = await supabase
             .from('orders')
-            .select('*, products(name, slug)')
+            .select('id, created_at, status, amount, products(name, slug)')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
 
+        // Component hala mount durumda mı kontrol et
+        if (!mountedRef.current) return
+
+        if (error) {
+            console.error('[Orders] Fetch error:', error)
+            setLoading(false)
+            return
+        }
+
         if (data) {
-            setOrders(data as any)
+            // Type-safe dönüşüm - Supabase'den products array olarak gelebilir
+            const validOrders: Order[] = data.map(item => ({
+                id: item.id,
+                created_at: item.created_at,
+                status: item.status,
+                amount: item.amount,
+                // products array olarak gelirse ilk elemanı al, değilse olduğu gibi kullan
+                products: Array.isArray(item.products)
+                    ? (item.products[0] || null)
+                    : (item.products || null)
+            }))
+            setOrders(validOrders)
+            lastFetchRef.current = now
         }
         setLoading(false)
-    }
+    }, [])
 
     useEffect(() => {
-        fetchOrders()
+        mountedRef.current = true
+        fetchOrders(true) // İlk yüklemede force fetch
 
-        // Sayfa focus'a geldiğinde verileri yenile
+        // Sayfa focus'a geldiğinde verileri yenile (stable reference ile)
         const handleFocus = () => {
-            fetchOrders()
+            if (mountedRef.current) {
+                fetchOrders(false) // Stale time kontrolü uygula
+            }
         }
 
         window.addEventListener('focus', handleFocus)
-        return () => window.removeEventListener('focus', handleFocus)
-    }, [])
+
+        // Cleanup - memory leak önleme
+        return () => {
+            mountedRef.current = false
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [fetchOrders])
+    // ================================================
 
     if (loading) {
         return (

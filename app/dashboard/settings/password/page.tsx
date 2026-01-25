@@ -57,33 +57,24 @@ export default function PasswordPage() {
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         setLoading(true)
         try {
-            // Önce mevcut kullanıcıyı al
-            const { data: { user } } = await supabase.auth.getUser()
-
-            if (!user?.email) {
-                toast.error('Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.')
-                return
-            }
-
-            // Mevcut şifreyi doğrula (re-authentication)
-            const { error: authError } = await supabase.auth.signInWithPassword({
-                email: user.email,
-                password: values.currentPassword
+            // ======== TOCTOU FIX ========
+            // Frontend'de re-auth + update yerine atomic backend endpoint kullan
+            const response = await fetch('/api/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    currentPassword: values.currentPassword,
+                    newPassword: values.newPassword
+                })
             })
 
-            if (authError) {
-                toast.error('Mevcut şifre yanlış.')
+            const data = await response.json()
+
+            if (!response.ok) {
+                toast.error(data.error || 'Şifre güncellenemedi')
                 return
             }
-
-            // Şifreyi güncelle
-            const { error } = await supabase.auth.updateUser({
-                password: values.newPassword
-            })
-
-            if (error) {
-                throw error
-            }
+            // ============================
 
             toast.success('Şifreniz başarıyla güncellendi!')
             form.reset()

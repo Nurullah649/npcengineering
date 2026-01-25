@@ -47,18 +47,24 @@ export default function SettingsPage() {
         },
     })
 
+    // ======== useEffect DEPENDENCY FIX ========
+    // form dependency kaldırıldı, mounted flag eklendi
     useEffect(() => {
+        let mounted = true
+
         const fetchProfile = async () => {
             try {
                 const { data: { user }, error: authError } = await supabase.auth.getUser()
 
                 if (authError || !user) {
-                    toast.error('Oturum bilgisi alınamadı. Lütfen tekrar giriş yapın.')
-                    setLoading(false)
+                    if (mounted) {
+                        toast.error('Oturum bilgisi alınamadı. Lütfen tekrar giriş yapın.')
+                        setLoading(false)
+                    }
                     return
                 }
 
-                setEmail(user.email || '')
+                if (mounted) setEmail(user.email || '')
 
                 // Profil bilgilerini getir
                 const { data: profile, error: profileError } = await supabase
@@ -71,6 +77,8 @@ export default function SettingsPage() {
                     // PGRST116 = row not found, bu normal olabilir
                     console.error('Profile fetch error:', profileError)
                 }
+
+                if (!mounted) return
 
                 if (profile) {
                     form.reset({
@@ -85,13 +93,17 @@ export default function SettingsPage() {
                 }
             } catch (error) {
                 console.error('Fetch profile error:', error)
-                toast.error('Profil bilgileri yüklenirken bir hata oluştu.')
+                if (mounted) toast.error('Profil bilgileri yüklenirken bir hata oluştu.')
             } finally {
-                setLoading(false)
+                if (mounted) setLoading(false)
             }
         }
         fetchProfile()
-    }, [form])
+
+        return () => { mounted = false }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []) // form dependency kaldırıldı - infinite loop önlendi
+    // ============================================
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         setSaving(true)

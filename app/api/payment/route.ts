@@ -4,6 +4,7 @@ import { createShopier } from '@/lib/shopier';
 import { getProductBySlug } from '@/lib/products';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { validatePaymentRequest, sanitizeInput } from '@/lib/payment-validation';
 
 // ... Enum tanımları (ProductType, CurrencyType) aynı kalsın ...
 enum ProductType {
@@ -35,12 +36,28 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Frontend'den gelen JSON verisini oku
     const body = await request.json();
-    const { slug, buyer } = body;
-    // buyer objesi şunları içermeli: { name, surname, email, phone }
 
-    if (!slug) {
-      return NextResponse.json({ error: 'Ürün bilgisi eksik' }, { status: 400 });
+    // ======== PAYMENT VALIDATION ========
+    // Zod ile input validation
+    const validation = validatePaymentRequest(body);
+
+    if (!validation.success) {
+      console.log('[Payment API] Validation failed:', validation.errors);
+      return NextResponse.json(
+        { error: 'Geçersiz form verisi', details: validation.errors },
+        { status: 400 }
+      );
     }
+
+    const { slug, buyer } = validation.data!;
+    // Sanitize edilmiş buyer verileri
+    const safeBuyer = {
+      name: sanitizeInput(buyer.name),
+      surname: sanitizeInput(buyer.surname),
+      email: buyer.email.toLowerCase().trim(),
+      phone: buyer.phone,
+    };
+    // ====================================
 
     const product = await getProductBySlug(slug);
     if (!product) {
@@ -99,16 +116,16 @@ export async function POST(request: NextRequest) {
 
     shopier.setCurrency(CurrencyType.TL);
 
-    // 4. Formdan gelen gerçek verileri kullan
+    // 4. Sanitize edilmiş verileri kullan
     shopier.setBuyer({
       buyer_id_nr: '11111111111', // TC No (Zorunlu ama sanal üründe maskelenebilir)
       platform_order_id: orderId,
       product_name: product.name,
       product_type: ProductType.DOWNLOADABLE_VIRTUAL,
-      buyer_name: buyer.name,       // Formdan gelen Ad
-      buyer_surname: buyer.surname, // Formdan gelen Soyad
-      buyer_email: buyer.email,     // Formdan gelen Email
-      buyer_phone: buyer.phone,     // Formdan gelen Telefon
+      buyer_name: safeBuyer.name,       // Sanitize edilmiş Ad
+      buyer_surname: safeBuyer.surname, // Sanitize edilmiş Soyad
+      buyer_email: safeBuyer.email,     // Normalize edilmiş Email
+      buyer_phone: safeBuyer.phone,     // Validate edilmiş Telefon
       buyer_account_age: 0
     });
 
