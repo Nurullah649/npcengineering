@@ -74,6 +74,17 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
     useEffect(() => {
         const init = async () => {
             const { id } = await params
+
+            // Otomatik Veri Onarımı (Eksik paket bilgisi varsa düzelt)
+            try {
+                await fetch('/api/fix-subscription-data', {
+                    method: 'POST',
+                    body: JSON.stringify({ subscription_id: id })
+                })
+            } catch (e) {
+                console.error('Auto fix error:', e)
+            }
+
             await fetchSubscription(id)
         }
         init()
