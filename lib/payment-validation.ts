@@ -33,7 +33,7 @@ export const buyerSchema = z.object({
         }, 'Geçici e-posta adresleri kabul edilmiyor'),
 
     phone: z.string()
-        .transform(val => val.replace(/\s/g, '')) // Boşlukları kaldır
+        .transform(val => val.replace(/[^0-9+]/g, '')) // Sadece rakam ve + bırak
         .refine((val) => turkishPhoneRegex.test(val), 'Geçerli bir telefon numarası girin (05XX XXX XX XX)'),
 });
 
@@ -47,7 +47,7 @@ export const paymentRequestSchema = z.object({
     buyer: buyerSchema,
 
     // Opsiyonel alanlar
-    packageId: z.string().uuid('Geçersiz paket ID').optional(),
+    packageId: z.string().uuid('Geçersiz paket ID').nullable().optional(),
 });
 
 // TC Kimlik validation (Luhn benzeri algoritma)
