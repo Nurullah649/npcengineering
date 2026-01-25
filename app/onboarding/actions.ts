@@ -210,16 +210,33 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
             }
         }
 
-        // 9. Order'ı completed olarak güncelle
-        await npcClient
+        // 9. Order'ı completed olarak güncelle ve order id'yi al
+        const { data: updatedOrder } = await npcClient
             .from('orders')
             .update({
                 status: 'completed',
                 updated_at: new Date().toISOString()
             })
             .eq('shopier_order_id', formData.orderId)
+            .select('id, product_id')
+            .single()
 
-        // 10. Başarılı - redirect URL döndür
+        // 10. NPC Engineering subscriptions tablosuna kayıt ekle
+        // Bu sayede aboneliklerim sayfasında görünecek
+        if (updatedOrder) {
+            await npcClient
+                .from('subscriptions')
+                .insert({
+                    user_id: user.id,
+                    product_id: updatedOrder.product_id,
+                    order_id: updatedOrder.id,
+                    start_date: new Date().toISOString(),
+                    end_date: subscriptionEndDate.toISOString(),
+                    status: 'active'
+                })
+        }
+
+        // 11. Başarılı - redirect URL döndür
         return {
             success: true,
             message: 'Kafe başarıyla oluşturuldu!',

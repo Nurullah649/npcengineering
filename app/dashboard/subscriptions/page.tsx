@@ -176,7 +176,7 @@ export default function SubscriptionsPage() {
                         Ürünlerimizi keşfetmek için mağazayı ziyaret edin.
                     </p>
                     <Button className="mt-4" asChild>
-                        <a href="/products">Ürünleri Keşfet</a>
+                        <a href="/#products">Ürünleri Keşfet</a>
                     </Button>
                 </Card>
             </div>
