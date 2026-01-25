@@ -58,12 +58,14 @@ export async function GET(request: NextRequest) {
         features,
         duration_months,
         price,
+        multiplier,
         discount_percentage,
         is_active,
         products (
           id,
           name,
-          slug
+          slug,
+          price
         )
       `)
             .eq('is_active', true)
@@ -97,7 +99,15 @@ export async function GET(request: NextRequest) {
 
         // Fiyat hesaplama ve indirim mantığı
         const packagesWithPricing = packages?.map(pkg => {
-            let finalPrice = pkg.price;
+            let basePrice = pkg.price;
+            // @ts-ignore
+            if (pkg.multiplier && pkg.products?.price) {
+                // @ts-ignore
+                basePrice = Number(pkg.products.price) * Number(pkg.multiplier);
+            }
+            basePrice = basePrice || 0;
+
+            let finalPrice = basePrice;
             let appliedDiscountPercentage = pkg.discount_percentage || 0;
             let originalPrice = null;
             let discountLabel = null;
@@ -106,8 +116,8 @@ export async function GET(request: NextRequest) {
             if (isFirstTimeBuyer) {
                 if (pkg.duration_months === 1) {
                     // Aylık pakette %50 indirim
-                    originalPrice = pkg.price;
-                    finalPrice = pkg.price * 0.5;
+                    originalPrice = basePrice;
+                    finalPrice = basePrice * 0.5;
                     appliedDiscountPercentage = 50;
                     discountLabel = "İlk ay %50 indirim!";
                 } else if (pkg.duration_months === 12) {
@@ -119,11 +129,17 @@ export async function GET(request: NextRequest) {
                     // Aylık paketi bul (base price için)
                     const monthlyPkg = packages.find(p => p.duration_months === 1);
                     if (monthlyPkg) {
-                        const monthlyPrice = monthlyPkg.price;
+                        let monthlyBasePrice = monthlyPkg.price;
+                        // @ts-ignore
+                        if (monthlyPkg.multiplier && monthlyPkg.products?.price) {
+                            // @ts-ignore
+                            monthlyBasePrice = Number(monthlyPkg.products.price) * Number(monthlyPkg.multiplier);
+                        }
+                        const monthlyPrice = monthlyBasePrice || 0;
                         const discountAmount = monthlyPrice * 0.5;
 
-                        originalPrice = pkg.price;
-                        finalPrice = pkg.price - discountAmount;
+                        originalPrice = basePrice;
+                        finalPrice = basePrice - discountAmount;
 
                         // Yüzdeyi tekrar hesapla
                         const diff = originalPrice - finalPrice;

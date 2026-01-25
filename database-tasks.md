@@ -281,3 +281,21 @@ UPDATE subscriptions SET onboarding_status = 'completed';
 ```sql
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS package_id UUID REFERENCES packages(id);
 ```
+
+---
+
+## 8. Paket Fiyatlarını Ürüne Endeksleme (YENİ) - Multiplier
+
+- [ ] `packages` tablosuna `multiplier` kolonu ekle ve `price`'ı dinamik hale getir.
+
+```sql
+-- 1. Multiplier kolonu ekle
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS multiplier DECIMAL(4,2) DEFAULT 1.0;
+
+-- 2. Mevcut paketler için multiplier ayarla
+UPDATE packages SET multiplier = 1 WHERE duration_months = 1;
+UPDATE packages SET multiplier = 10 WHERE duration_months = 12;
+
+-- 3. Price kolonunu zorunlu olmaktan çıkar (artık hesaplanacak)
+ALTER TABLE packages ALTER COLUMN price DROP NOT NULL;
+```

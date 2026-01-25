@@ -90,7 +90,16 @@ export async function POST(request: NextRequest) {
 
       if (pkg) {
         selectedPackageId = pkg.id;
-        finalAmount = pkg.price; // Paket fiyatını baz al
+
+        let basePrice = pkg.price;
+        // Multiplier varsa ürün fiyatına göre hesapla
+        if (pkg.multiplier && product.price) {
+          basePrice = product.price * pkg.multiplier;
+        }
+        // Fiyat null ise 0 yap
+        basePrice = basePrice || 0;
+
+        finalAmount = basePrice; // Paket fiyatını baz al
 
         // First Time Buyer Kontrolü
         const { count } = await supabase
@@ -104,19 +113,24 @@ export async function POST(request: NextRequest) {
         if (isFirstTimeBuyer) {
           if (pkg.duration_months === 1) {
             // Aylık Paket: %50 İndirim
-            finalAmount = pkg.price * 0.5;
+            finalAmount = basePrice * 0.5;
           } else if (pkg.duration_months === 12) {
             // Yıllık Paket: Ekstra 0.5 aylık indirim
             // Paket fiyatından (Aylık paket fiyatının yarısı) kadar düş
             const { data: monthlyPkg } = await supabase
               .from('packages')
-              .select('price')
+              .select('price, multiplier') // Multiplier da çek
               .eq('product_id', pkg.product_id)
               .eq('duration_months', 1)
               .single();
 
             if (monthlyPkg) {
-              finalAmount = pkg.price - (monthlyPkg.price * 0.5);
+              let monthlyBasePrice = monthlyPkg.price;
+              if (monthlyPkg.multiplier && product.price) {
+                monthlyBasePrice = product.price * monthlyPkg.multiplier;
+              }
+              const monthlyPrice = monthlyBasePrice || 0;
+              finalAmount = basePrice - (monthlyPrice * 0.5);
             }
           }
         }
