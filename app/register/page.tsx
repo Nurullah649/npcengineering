@@ -81,7 +81,7 @@ export default function RegisterPage() {
       toast.success('Hesap oluşturuldu! Giriş yapabilirsiniz.');
       // Otomatik giriş yapılmamışsa login sayfasına at
       if (!data.session) {
-        router.push('/login');
+        router.push('/login?message=check-email');
       } else {
         router.push('/dashboard');
         router.refresh();
@@ -149,7 +149,26 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Şifre</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="******"
+                            {...field}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="sr-only">{showPassword ? "Gizle" : "Göster"}</span>
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -162,7 +181,26 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Şifre Tekrar</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="******"
+                            {...field}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="sr-only">{showConfirmPassword ? "Gizle" : "Göster"}</span>
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

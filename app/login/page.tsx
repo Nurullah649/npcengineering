@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
+import { Loader2, LogIn, Eye, EyeOff, MailCheck } from 'lucide-react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { supabase } from '@/lib/supabase';
@@ -40,6 +41,15 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailCheck, setShowEmailCheck] = useState(false);
+
+  useEffect(() => {
+    // URL parametrelerini kontrol et (Mail onayı mesajı için)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('message') === 'check-email') {
+      setShowEmailCheck(true);
+    }
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -118,6 +128,16 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {showEmailCheck && (
+            <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 flex items-start gap-3">
+              <MailCheck className="h-5 w-5 mt-0.5 shrink-0" />
+              <div className="text-sm">
+                <p className="font-semibold">Kayıt Başarılı!</p>
+                <p>Hesabınızı aktifleştirmek için lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.</p>
+              </div>
+            </div>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -141,7 +161,26 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Şifre</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="******"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span className="sr-only">{showPassword ? "Gizle" : "Göster"}</span>
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
