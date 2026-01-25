@@ -62,7 +62,16 @@ interface UserAccount {
     username: string
     password_masked: string
     has_password: boolean
+    password_encrypted?: string
 }
+
+const decodePassword = (encrypted: string) => {
+    try {
+        if (typeof window !== 'undefined') return window.atob(encrypted)
+        return Buffer.from(encrypted, 'base64').toString('utf-8')
+    } catch { return 'Çözülemedi' }
+}
+
 
 export default function SubscriptionDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
@@ -320,7 +329,9 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                                     <p className="text-sm text-muted-foreground mb-1">Şifre</p>
                                     <div className="flex items-center gap-2">
                                         <code className="text-lg font-mono">
-                                            {showPassword ? 'gizli-sifre' : '••••••••'}
+                                            {showPassword
+                                                ? (account.password_encrypted ? decodePassword(account.password_encrypted) : (account.has_password ? 'gizli-sifre' : 'Belirlenmedi'))
+                                                : '••••••••'}
                                         </code>
                                         <Button
                                             variant="ghost"
