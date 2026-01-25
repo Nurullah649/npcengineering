@@ -13,7 +13,7 @@ import {
   Tag
 } from "lucide-react"
 import { ProductScreenshots } from "./product-screenshots"
-import { PurchaseButton } from "./purchase-button"
+import { ProductPricing } from "./purchase-button"
 
 // Sayfa cache'ini devre dışı bırak - her istekte güncel fiyat çek
 export const dynamic = 'force-dynamic'
@@ -162,7 +162,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <p className="mb-6 text-sm text-muted-foreground">
                   Tek seferlik ödeme • Ömür boyu erişim • Ücretsiz güncellemeler
                 </p>
-                <PurchaseButton product={product} />
+                <ProductPricing product={product} />
                 <p className="mt-4 text-center text-xs text-muted-foreground">
                   30 gün para iade garantisi
                 </p>

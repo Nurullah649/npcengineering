@@ -16,6 +16,17 @@ export interface Product {
   lastUpdated?: string // Veritabanındaki last_updated
   downloads?: number
   rating?: number
+  packages?: Package[]
+}
+
+export interface Package {
+  id: string
+  name: string
+  description?: string
+  duration_months: number
+  price: number
+  multiplier?: number
+  is_active: boolean
 }
 
 // Veritabanı sütun adlarını (snake_case) arayüzümüze (camelCase) çeviriyoruz
@@ -34,7 +45,16 @@ const mapDatabaseToProduct = (data: any): Product => ({
   version: data.version,
   lastUpdated: data.last_updated,           // SQL: last_updated
   downloads: data.downloads,
-  rating: data.rating
+  rating: data.rating,
+  packages: data.packages?.map((pkg: any) => ({
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description,
+    duration_months: pkg.duration_months,
+    price: pkg.price,
+    multiplier: pkg.multiplier,
+    is_active: pkg.is_active
+  })).sort((a: Package, b: Package) => a.price - b.price) || [] // Fiyata göre sırala
 })
 
 export async function getAllProducts(): Promise<Product[]> {
@@ -55,7 +75,7 @@ export async function getAllProducts(): Promise<Product[]> {
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select('*, packages(*)')
     .eq('slug', slug)
     .single()
 
