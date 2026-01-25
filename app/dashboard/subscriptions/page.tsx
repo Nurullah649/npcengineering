@@ -57,6 +57,9 @@ interface UserAccount {
     username: string
     password_masked: string
     has_password: boolean
+    additional_info?: {
+        panel_url?: string
+    }
 }
 
 export default function SubscriptionsPage() {
@@ -275,6 +278,18 @@ export default function SubscriptionsPage() {
                                                     </Button>
                                                 </div>
                                             </div>
+                                            {/* Panel Linki Varsa Göster */}
+                                            {account.additional_info?.panel_url && (
+                                                <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                                                    <span className="text-sm text-muted-foreground">Yönetim Paneli</span>
+                                                    <Button variant="link" size="sm" className="h-auto p-0 text-primary" asChild>
+                                                        <a href={account.additional_info.panel_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                                            Giriş Yap
+                                                            <ExternalLink className="h-3 w-3" />
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
@@ -290,10 +305,12 @@ export default function SubscriptionsPage() {
                                             Detaylar
                                         </a>
                                     </Button>
-                                    {subscription.is_expiring_soon && (
-                                        <Button size="sm" className="gap-2">
-                                            <RefreshCw className="h-4 w-4" />
-                                            Süre Uzat
+                                    {(subscription.is_expiring_soon || subscription.is_expired) && (
+                                        <Button size="sm" className="gap-2" asChild>
+                                            <a href={`/products/${subscription.products?.slug || 'siparisgo'}/packages`}>
+                                                <RefreshCw className="h-4 w-4" />
+                                                {subscription.is_expired ? 'Yenile' : 'Süre Uzat'}
+                                            </a>
                                         </Button>
                                     )}
                                     {subscription.products?.slug && (

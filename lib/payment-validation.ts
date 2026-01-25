@@ -47,7 +47,7 @@ export const paymentRequestSchema = z.object({
     buyer: buyerSchema,
 
     // Opsiyonel alanlar
-    package_id: z.string().uuid('Geçersiz paket ID').optional(),
+    packageId: z.string().uuid('Geçersiz paket ID').optional(),
 });
 
 // TC Kimlik validation (Luhn benzeri algoritma)

@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { slug, buyer } = validation.data!;
+    const { slug, buyer, packageId } = validation.data!;
     // Sanitize edilmiş buyer verileri
     const safeBuyer = {
       name: sanitizeInput(buyer.name),
@@ -75,6 +75,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Giriş yapmanız gerekiyor' }, { status: 401 });
     }
 
+    // İndirim ve Paket Fiyatlandırma Mantığı
+    let finalAmount = product.price; // Varsayılan: Ürün fiyatı
+    let selectedPackageId = null;
+
+    if (packageId) {
+      // Paketi veritabanından çek
+      const { data: pkg } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('id', packageId)
+        // .eq('product_id', product.id) // Güvenlik için eklenebilir ama şu anlık ID yeterli
+        .single();
+
+      if (pkg) {
+        selectedPackageId = pkg.id;
+        finalAmount = pkg.price; // Paket fiyatını baz al
+
+        // First Time Buyer Kontrolü
+        const { count } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .in('status', ['paid', 'completed']);
+
+        const isFirstTimeBuyer = count === 0;
+
+        if (isFirstTimeBuyer) {
+          if (pkg.duration_months === 1) {
+            // Aylık Paket: %50 İndirim
+            finalAmount = pkg.price * 0.5;
+          } else if (pkg.duration_months === 12) {
+            // Yıllık Paket: Ekstra 0.5 aylık indirim
+            // Paket fiyatından (Aylık paket fiyatının yarısı) kadar düş
+            const { data: monthlyPkg } = await supabase
+              .from('packages')
+              .select('price')
+              .eq('product_id', pkg.product_id)
+              .eq('duration_months', 1)
+              .single();
+
+            if (monthlyPkg) {
+              finalAmount = pkg.price - (monthlyPkg.price * 0.5);
+            }
+          }
+        }
+      }
+    }
+
     const orderId = `NPC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     // 3. Order'ı veritabanına kaydet
@@ -90,12 +138,15 @@ export async function POST(request: NextRequest) {
       const orderData = {
         user_id: user.id,
         product_id: dbProduct.id,
-        amount: product.price,
+        amount: finalAmount, // İndirimli fiyat
+        package_id: selectedPackageId, // Seçilen paket
         status: 'pending',
         shopier_order_id: orderId,
       };
 
       console.log('[Payment API] Creating order:', orderData);
+
+      // ... insert kodu devam ediyor ...
 
       const { data: createdOrder, error: orderError } = await supabase
         .from('orders')

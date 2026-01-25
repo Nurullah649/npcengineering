@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,8 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const packageId = searchParams.get('package')
 
   // Auth state kontrolü
   useEffect(() => {
@@ -107,6 +109,7 @@ export function PurchaseButton({ product }: PurchaseButtonProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug: product.slug,
+          packageId: packageId,
           buyer: formData, // Formdan gelen veriler
         }),
       })

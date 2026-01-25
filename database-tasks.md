@@ -245,3 +245,39 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS tc_kimlik TEXT;
 ```
 
 Bu SQL'i Supabase Dashboard → SQL Editor'da çalıştırın.
+
+---
+
+## 6. Gelişmiş Abonelik Sistemi Migration (YENİ) - `advanced-subscription-migration.sql`
+
+- [ ] `packages` tablosuna yıllık paket ekle ve `subscriptions` tablosunu güncelle.
+
+```sql
+-- 0. Eksik Kolonları Ekle
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS features JSONB;
+
+-- 1. Yıllık Paket Ekle (SiparisGO)
+INSERT INTO packages (product_id, name, description, price, features, duration_months, is_active)
+SELECT 
+  id, 'Yıllık Paket', '12 ay kullanım, 2 ay bedava!', 1000, 
+  '{"feature1": true}'::jsonb, 12, true
+FROM products WHERE slug = 'siparisgo'
+ON CONFLICT DO NOTHING;
+
+-- 2. Subscriptions Tablosu Güncelleme
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS onboarding_status VARCHAR(20) DEFAULT 'completed';
+
+-- 3. Mevcut Abonelikleri Güncelle
+UPDATE subscriptions SET onboarding_status = 'completed';
+```
+
+---
+
+## 7. Orders Tablosuna Package ID Ekleme (YENİ) - Gelişmiş Abonelik İçin
+
+- [ ] `orders` tablosuna `package_id` kolonu ekle.
+
+```sql
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS package_id UUID REFERENCES packages(id);
+```

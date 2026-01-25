@@ -26,7 +26,9 @@ interface Package {
     name: string
     duration_months: number
     price: number
+    original_price?: number | null // İndirimsiz fiyat
     discount_percentage: number
+    discount_label?: string | null // İndirim etiketi
     is_active: boolean
     monthly_equivalent: number
     savings: number
@@ -200,8 +202,8 @@ export default function PackagesPage({ params }: { params: Promise<{ slug: strin
                                 <Card
                                     key={pkg.id}
                                     className={`relative cursor-pointer transition-all hover:shadow-lg ${isSelected
-                                            ? 'ring-2 ring-primary border-primary'
-                                            : 'hover:border-primary/50'
+                                        ? 'ring-2 ring-primary border-primary'
+                                        : 'hover:border-primary/50'
                                         } ${isPopular ? 'md:scale-105' : ''}`}
                                     onClick={() => setSelectedPackage(pkg.id)}
                                 >
@@ -226,6 +228,11 @@ export default function PackagesPage({ params }: { params: Promise<{ slug: strin
 
                                     <CardContent className="text-center">
                                         <div className="mb-2">
+                                            {pkg.original_price && (
+                                                <span className="text-muted-foreground line-through text-sm block">
+                                                    ₺{pkg.original_price}
+                                                </span>
+                                            )}
                                             <span className="text-3xl font-bold">₺{pkg.price}</span>
                                         </div>
 
@@ -239,16 +246,17 @@ export default function PackagesPage({ params }: { params: Promise<{ slug: strin
                                             </Badge>
                                         )}
 
-                                        {pkg.discount_percentage > 0 && (
-                                            <p className="text-xs text-muted-foreground mt-2">
-                                                %{pkg.discount_percentage} indirimli
-                                            </p>
+                                        {/* İndirim Etiketi veya Yüzdesi */}
+                                        {(pkg.discount_label || pkg.discount_percentage > 0) && (
+                                            <div className="mt-2 text-xs font-medium text-green-600">
+                                                {pkg.discount_label || `%${pkg.discount_percentage} indirimli`}
+                                            </div>
                                         )}
 
                                         {/* Selection Indicator */}
                                         <div className={`mt-4 h-10 rounded-lg flex items-center justify-center transition-colors ${isSelected
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted text-muted-foreground'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted text-muted-foreground'
                                             }`}>
                                             {isSelected ? (
                                                 <span className="flex items-center gap-1 text-sm font-medium">

@@ -177,9 +177,31 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
             ownerId = newUser.user.id
         }
 
-        // 8. Abonelik bitiş tarihini hesapla (30 gün)
+        // 8. Abonelik bitiş tarihini hesapla (Dinamik - Pakete göre)
+        let durationMonths = 1;
+
+        // Siparişi ve ilişkili paket bilgisini çek
+        // (Eğer SQL migration çalıştırıldıysa packages ilişkisi çalışır)
+        const { data: orderData } = await npcClient
+            .from('orders')
+            .select(`
+                package_id,
+                packages (
+                    duration_months
+                )
+            `)
+            .eq('shopier_order_id', formData.orderId)
+            .single();
+
+        // TypeScript için güvenli erişim (join sonucu tek obje veya array olabilir ama single dediğimiz için obje)
+        // @ts-ignore - Supabase type generation güncel olmayabilir
+        if (orderData?.packages?.duration_months) {
+            // @ts-ignore
+            durationMonths = orderData.packages.duration_months;
+        }
+
         const subscriptionEndDate = new Date()
-        subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30)
+        subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + durationMonths)
 
         // 9. Cafes tablosuna insert
         // UYARI: SiparisGO sistemi şu anda şifreleri düz metin olarak bekliyor.
@@ -224,7 +246,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         // 10. NPC Engineering subscriptions tablosuna kayıt ekle
         // Bu sayede aboneliklerim sayfasında görünecek
         if (updatedOrder) {
-            await npcClient
+            const { data: newSub } = await npcClient
                 .from('subscriptions')
                 .insert({
                     user_id: user.id,
@@ -232,11 +254,31 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
                     order_id: updatedOrder.id,
                     start_date: new Date().toISOString(),
                     end_date: subscriptionEndDate.toISOString(),
-                    status: 'active'
+                    status: 'active',
+                    onboarding_status: 'completed'
                 })
+                .select('id')
+                .single()
+
+            // 11. Kullanıcı hesap bilgilerini sakla (Aboneliklerim sayfasında göstermek için)
+            if (newSub) {
+                await npcClient
+                    .from('user_product_accounts')
+                    .insert({
+                        subscription_id: newSub.id,
+                        user_id: user.id,
+                        product_id: updatedOrder.product_id,
+                        username: formData.username.toLowerCase(),
+                        password_encrypted: Buffer.from(formData.password).toString('base64'), // Basit encoding
+                        additional_info: {
+                            password_set: true,
+                            panel_url: 'https://siparisgo.npcengineering.com/login' // Panel giriş linki
+                        }
+                    })
+            }
         }
 
-        // 11. Başarılı - redirect URL döndür
+        // 12. Başarılı - redirect URL döndür
         return {
             success: true,
             message: 'Kafe başarıyla oluşturuldu!',
