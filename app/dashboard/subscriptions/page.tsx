@@ -42,7 +42,6 @@ interface Subscription {
         id: string
         name: string
         slug: string
-        image_url?: string
     } | null
     packages: {
         id: string

@@ -52,8 +52,7 @@ export async function GET(request: NextRequest) {
         products (
           id,
           name,
-          slug,
-          image_url
+          slug
         ),
         packages (
           id,
