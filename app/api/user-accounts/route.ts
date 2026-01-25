@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         user_id,
         product_id,
         username,
+        password_encrypted,
         additional_info,
         created_at,
         updated_at,
