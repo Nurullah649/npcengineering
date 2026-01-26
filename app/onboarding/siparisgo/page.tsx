@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { createCafe, linkSiparisGoAccount, autoExtendSubscription } from '../actions'
+import { createCafe, linkSiparisGoAccount, checkAndExtendSubscription } from '../actions'
 import { toast } from 'sonner'
 import { Loader2, Store, User, Lock, CheckCircle2, AlertCircle, Eye, EyeOff, Link as LinkIcon, PlusCircle } from 'lucide-react'
 
@@ -39,6 +39,7 @@ function OnboardingContent() {
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [successMessage, setSuccessMessage] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
 
@@ -71,28 +72,40 @@ function OnboardingContent() {
                 return
             }
 
-            // AUTO-EXTEND CHECK
+            // 2. CHECK & EXTEND SUBSCRIPTION (Renewal Logic)
             try {
-                const autoResult = await autoExtendSubscription(orderId)
-                if (autoResult.success) {
-                    toast.success(autoResult.message || 'Aboneliğiniz otomatik olarak uzatıldı!')
+                const result = await checkAndExtendSubscription(orderId)
+
+                if (result.status === 'extended') {
+                    // SÜRE UZATILDI -> BAŞARILI EKRANI
                     setSuccess(true)
-                    setRedirectUrl(autoResult.redirectUrl || 'https://siparisgo.npcengineering.com/login')
+                    setSuccessMessage('Aboneliğiniz başarıyla uzatıldı! İşlem tamamlandı.')
+                    setRedirectUrl(result.redirectUrl || 'https://siparisgo.npcengineering.com/dashboard')
+                    toast.success('Abonelik süreniz uzatıldı.')
 
-                    // Hızlı yönlendirme
+                    // 3sn sonra yönlendir
                     setTimeout(() => {
-                        window.location.href = autoResult.redirectUrl || 'https://siparisgo.npcengineering.com/login'
-                    }, 1500)
+                        window.location.href = result.redirectUrl || 'https://siparisgo.npcengineering.com/dashboard'
+                    }, 3000)
 
-                    setLoading(false) // Success ekranını göster
+                    setLoading(false)
                     return
+                } else if (result.status === 'error') {
+                    // Ciddi bir hata varsa göster
+                    if (result.message && result.message !== 'Sistem hatası') {
+                        setError(result.message)
+                        setLoading(false)
+                        return
+                    }
                 }
-            } catch (err) {
-                console.error('Auto extend check failed:', err)
-                // Hata olsa bile devam et, belki yeni kurulumdur
-            }
 
-            setLoading(false)
+                // status === 'new_user' ise veya önemsiz hataysa -> Formu göster
+                setLoading(false)
+
+            } catch (err) {
+                console.error('Check extend error:', err)
+                setLoading(false)
+            }
         }
 
         checkAuth()
@@ -234,7 +247,7 @@ function OnboardingContent() {
                             <CheckCircle2 className="h-12 w-12 text-green-500" />
                             <h2 className="text-xl font-semibold">Tebrikler! 🎉</h2>
                             <p className="text-muted-foreground">
-                                {mode === 'create' ? 'Kafe hesabınız başarıyla oluşturuldu.' : 'Hesabınız başarıyla bağlandı.'}
+                                {successMessage || (mode === 'create' ? 'Kafe hesabınız başarıyla oluşturuldu.' : 'Hesabınız başarıyla bağlandı.')}
                             </p>
                             <div className="mt-2 rounded-lg bg-muted p-4 w-full">
                                 <p className="text-sm font-medium">Giriş Bilgileriniz:</p>
