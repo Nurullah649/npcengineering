@@ -636,7 +636,13 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         const npcClient = await getNpcEngineeringClient()
         const { data: { user } } = await npcClient.auth.getUser()
 
-        if (!user) return { status: 'error', message: 'Oturum gerekli' }
+        if (!user) {
+            console.log('[AutoExtend] No session user found.');
+            return { status: 'error', message: 'Oturum gerekli' }
+        }
+
+        console.log('[AutoExtend] Checking for User:', user.id);
+        console.log('[AutoExtend] Order ID:', orderId);
 
         // 1. Siparişi Bul (Shopier ID desteği ile)
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
@@ -654,14 +660,27 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
             .eq(idField, orderId)
             .maybeSingle()
 
-        if (!order) return { status: 'error', message: 'Sipariş bulunamadı' }
+        if (!order) {
+            console.log('[AutoExtend] Order not found for:', orderId);
+            return { status: 'error', message: 'Sipariş bulunamadı' }
+        }
+
+        console.log('[AutoExtend] Order Found:', {
+            id: order.id,
+            userId: order.user_id,
+            status: order.status,
+            productId: order.product_id
+        });
 
         // Güvenlik: Sipariş bu kullanıcıya mı ait?
-        if (order.user_id !== user.id) return { status: 'error', message: 'Yetkisiz erişim' }
+        if (order.user_id !== user.id) {
+            console.warn('[AutoExtend] User mismatch. OrderUser:', order.user_id, 'SessionUser:', user.id);
+            return { status: 'error', message: 'Yetkisiz erişim' }
+        }
 
         // Eğer sipariş zaten tamamlanmışsa
         if (order.status === 'completed') {
-            // Belki kullanıcı sayfayı yeniledi, yine de "başarılı" diyelim kiDashboard'a gitsin
+            console.log('[AutoExtend] Order already completed.');
             return {
                 status: 'extended',
                 message: 'İşlem daha önce tamamlanmış.',
@@ -670,14 +689,19 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         }
 
         // 2. Kullanıcının bu ürün için hesabı var mı?
+        console.log('[AutoExtend] Searching for account with:', { userId: user.id, productId: order.product_id });
+
         const { data: accounts } = await npcClient
             .from('user_product_accounts')
             .select('*, subscriptions(*)')
             .eq('user_id', user.id)
             .eq('product_id', order.product_id)
 
+        console.log('[AutoExtend] Accounts found:', accounts?.length || 0);
+
         // HESAP YOKSA -> İLK KAYIT (Form Göster)
         if (!accounts || accounts.length === 0) {
+            console.log('[AutoExtend] No account found. Redirecting to setup.');
             return { status: 'new_user' }
         }
 
