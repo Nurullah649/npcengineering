@@ -691,11 +691,15 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         // 2. Kullanıcının bu ürün için hesabı var mı?
         console.log('[AutoExtend] Searching for account with:', { userId: user.id, productId: order.product_id });
 
-        const { data: accounts } = await npcClient
+        const { data: allAccounts } = await npcClient
             .from('user_product_accounts')
             .select('*, subscriptions(*)')
             .eq('user_id', user.id)
-            .eq('product_id', order.product_id)
+
+        // Filter: Match product_id OR if product_id is null (legacy/buggy record)
+        const accounts = allAccounts?.filter(acc =>
+            acc.product_id === order.product_id || acc.product_id === null
+        ) || [];
 
         console.log('[AutoExtend] Accounts found:', accounts?.length || 0);
 
@@ -706,6 +710,14 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         }
 
         const account = accounts[0]; // İlk hesabı al
+
+        // SELF-HEAL: Eğer product_id null ise güncelle
+        if (account.product_id === null && order.product_id) {
+            console.log('[AutoExtend] Fixing missing product_id for account:', account.id);
+            await npcClient.from('user_product_accounts')
+                .update({ product_id: order.product_id })
+                .eq('id', account.id);
+        }
 
         // 3. HESAP VARSA -> SÜRE UZAT (SiparisGO + NPC)
         if (!siparisgoDb) return { status: 'error', message: 'Sistem hatası' }
@@ -812,11 +824,16 @@ export async function autoExtendSubscription(orderId: string): Promise<ActionRes
 
         // 2. Mevcut Hesap Kontrolü (User Product Accounts)
         // Bu kullanıcının bu ürün (siparisgo) için zaten bir hesabı var mı?
-        const { data: accounts } = await npcClient
+        // Bu kullanıcının bu ürün (siparisgo) için zaten bir hesabı var mı?
+        const { data: allAccounts } = await npcClient
             .from('user_product_accounts')
             .select('*, subscriptions(id, status, end_date)')
             .eq('user_id', user.id)
-            .eq('product_id', order.product_id)
+
+        // Filter: Match product_id OR if product_id is null
+        const accounts = allAccounts?.filter(acc =>
+            acc.product_id === order.product_id || acc.product_id === null
+        ) || [];
 
         // Eğer hesap yoksa, auto-extend yapamayız. Kullanıcı form doldurmalı.
         if (!accounts || accounts.length === 0) {
@@ -824,6 +841,13 @@ export async function autoExtendSubscription(orderId: string): Promise<ActionRes
         }
 
         const account = accounts[0]; // İlk hesabı baz alıyoruz (Genelde 1 tane olur)
+
+        // SELF-HEAL: Eğer product_id null ise güncelle
+        if (account.product_id === null && order.product_id) {
+            await npcClient.from('user_product_accounts')
+                .update({ product_id: order.product_id })
+                .eq('id', account.id);
+        }
 
         // 3. SiparisGO DB Bağlantısı
         if (!siparisgoDb) return { success: false, error: 'Sistem hatası' }
