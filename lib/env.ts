@@ -12,6 +12,9 @@ const envSchema = z.object({
     // SiparisGO (Optional - for cafe onboarding)
     SIPARISGO_SUPABASE_URL: z.string().url().optional(),
     SIPARISGO_SUPABASE_SERVICE_KEY: z.string().optional(),
+
+    // Admin (Optional - but required for subscription updates)
+    SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 })
 
 // Validate environment variables at build/start time
@@ -21,6 +24,7 @@ function validateEnv() {
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         SHOPIER_API_KEY: process.env.SHOPIER_API_KEY,
         SHOPIER_API_SECRET: process.env.SHOPIER_API_SECRET,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     })
 
     if (!parsed.success) {

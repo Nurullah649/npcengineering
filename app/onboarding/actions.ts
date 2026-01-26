@@ -51,9 +51,18 @@ const getNpcEngineeringClient = async () => {
 
 // Admin client to bypass RLS (for subscription updates)
 const getNpcAdminClient = () => {
+    // env.ts'de tanımlı ama optional. Eğer yoksa runtime'da hata verir.
+    // Ancak Actions içinde try-catch ile yakalıyoruz.
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!serviceKey) {
+        console.error('SUPABASE_SERVICE_ROLE_KEY eksik! Abonelik güncellenemeyecek.')
+        throw new Error('Server konfigürasyon hatası: Service Key eksik')
+    }
+
     return createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        serviceKey,
         {
             auth: {
                 autoRefreshToken: false,
