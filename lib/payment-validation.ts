@@ -11,7 +11,7 @@ const disposableEmailDomains = [
 ];
 
 // Türk telefon numarası regex
-const turkishPhoneRegex = /^(0|\\+90)?5\\d{9}$/;
+const turkishPhoneRegex = /^(0|\+90)?5\d{9}$/;
 
 // Buyer validation schema
 export const buyerSchema = z.object({
