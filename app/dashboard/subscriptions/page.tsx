@@ -342,14 +342,12 @@ export default function SubscriptionsPage() {
                                             Detaylar
                                         </a>
                                     </Button>
-                                    {(subscription.is_expiring_soon || subscription.is_expired) && (
-                                        <Button size="sm" className="gap-2" asChild>
-                                            <a href={`/products/${subscription.products?.slug || 'siparisgo'}/packages`}>
-                                                <RefreshCw className="h-4 w-4" />
-                                                {subscription.is_expired ? 'Yenile' : 'Süre Uzat'}
-                                            </a>
-                                        </Button>
-                                    )}
+                                    <Button size="sm" className="gap-2" asChild>
+                                        <a href={`/products/${subscription.products?.slug || 'siparisgo'}/packages`}>
+                                            <RefreshCw className="h-4 w-4" />
+                                            {subscription.is_expired ? 'Yenile' : 'Süre Uzat'}
+                                        </a>
+                                    </Button>
                                     {subscription.products?.slug && (
                                         <Button variant="outline" size="sm" className="gap-2" asChild>
                                             <a href={`/products/${subscription.products.slug}`}>

@@ -11,7 +11,8 @@ const disposableEmailDomains = [
 ];
 
 // Türk telefon numarası regex
-const turkishPhoneRegex = /^(0|\+90)?5\d{9}$/;
+// Türk telefon numarası regex (Removed in favor of robust normalization)
+// const turkishPhoneRegex = /^(0|\+90)?5\d{9}$/;
 
 // Buyer validation schema
 export const buyerSchema = z.object({
@@ -33,8 +34,24 @@ export const buyerSchema = z.object({
         }, 'Geçici e-posta adresleri kabul edilmiyor'),
 
     phone: z.string()
-        .transform(val => val.replace(/[^0-9+]/g, '')) // Sadece rakam ve + bırak
-        .refine((val) => turkishPhoneRegex.test(val), 'Geçerli bir telefon numarası girin (05XX XXX XX XX)'),
+
+        .transform(val => {
+            let clean = val.replace(/[^0-9]/g, ''); // Sadece rakamları al (artı işaretini de sil)
+
+            // +90 veya 90 ile başlıyorsa temizle
+            if (clean.startsWith('90')) {
+                clean = clean.substring(2);
+            }
+
+            // Başta kalan sıfırları temizle (örn. 0555 -> 555, +900555 -> 0555 -> 555)
+            // Bu recursive olmadığı için +90 0555 gibi durumları da kapsar (90 silinir, kalan 0 silinir)
+            while (clean.startsWith('0')) {
+                clean = clean.substring(1);
+            }
+
+            return clean; // Her zaman 5XX formatına getir (başında 0 olmadan)
+        })
+        .refine((val) => /^5\d{9}$/.test(val), 'Geçerli bir telefon numarası girin (5XX XXX XX XX)'),
 });
 
 // Payment request validation schema

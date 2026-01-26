@@ -187,7 +187,15 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                     <h1 className="text-2xl font-bold tracking-tight">Abonelik Detayı</h1>
                     <p className="text-muted-foreground">{subscription.products?.name}</p>
                 </div>
-                {getStatusBadge()}
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="gap-2" asChild>
+                        <Link href={`/products/${subscription.products?.slug || 'siparisgo'}/packages`}>
+                            <RefreshCw className="h-4 w-4" />
+                            {subscription.is_expired ? 'Yenile' : 'Süre Uzat'}
+                        </Link>
+                    </Button>
+                    {getStatusBadge()}
+                </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
@@ -232,7 +240,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Ödenen Tutar</span>
                             <span className="font-medium">
-                                {subscription.packages?.price ? `₺${subscription.packages.price}` : 'Plan Dahilinde'}
+                                {subscription.packages?.price !== undefined && subscription.packages?.price !== null ? `₺${subscription.packages.price}` : 'Plan Dahilinde'}
                             </span>
                         </div>
 
