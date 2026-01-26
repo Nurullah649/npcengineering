@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { createCafe, linkSiparisGoAccount } from '../actions'
+import { createCafe, linkSiparisGoAccount, autoExtendSubscription } from '../actions'
 import { toast } from 'sonner'
 import { Loader2, Store, User, Lock, CheckCircle2, AlertCircle, Eye, EyeOff, Link as LinkIcon, PlusCircle } from 'lucide-react'
 
@@ -67,6 +67,29 @@ function OnboardingContent() {
 
             if (!orderId) {
                 setError('Geçersiz sipariş. Lütfen satın alma işlemini tekrar yapın.')
+                setLoading(false)
+                return
+            }
+
+            // AUTO-EXTEND CHECK
+            try {
+                const autoResult = await autoExtendSubscription(orderId)
+                if (autoResult.success) {
+                    toast.success(autoResult.message || 'Aboneliğiniz otomatik olarak uzatıldı!')
+                    setSuccess(true)
+                    setRedirectUrl(autoResult.redirectUrl || 'https://siparisgo.npcengineering.com/login')
+
+                    // Hızlı yönlendirme
+                    setTimeout(() => {
+                        window.location.href = autoResult.redirectUrl || 'https://siparisgo.npcengineering.com/login'
+                    }, 1500)
+
+                    setLoading(false) // Success ekranını göster
+                    return
+                }
+            } catch (err) {
+                console.error('Auto extend check failed:', err)
+                // Hata olsa bile devam et, belki yeni kurulumdur
             }
 
             setLoading(false)
@@ -126,7 +149,7 @@ function OnboardingContent() {
         setSubmitting(true)
 
         try {
-            let result;
+            let result: { success: boolean, redirectUrl?: string, message?: string, error?: string } | undefined;
 
             if (mode === 'create') {
                 result = await createCafe({
@@ -143,7 +166,7 @@ function OnboardingContent() {
                 })
             }
 
-            if (result.success) {
+            if (result && result.success) {
                 setSuccess(true)
                 setRedirectUrl(result.redirectUrl || 'https://siparisgo.npcengineering.com')
                 toast.success(result.message || (mode === 'create' ? 'Kafe oluşturuldu!' : 'Hesap bağlandı!'))
@@ -155,8 +178,8 @@ function OnboardingContent() {
                     }
                 }, 3000)
             } else {
-                toast.error(result.error || 'Bir hata oluştu')
-                setErrors(prev => ({ ...prev, form: result.error || 'Hata' }))
+                toast.error(result?.error || 'Bir hata oluştu')
+                setErrors(prev => ({ ...prev, form: result?.error || 'Hata' }))
             }
         } catch (error) {
             console.error('Submit error:', error)
@@ -257,8 +280,8 @@ function OnboardingContent() {
                             type="button"
                             onClick={() => setMode('create')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'create'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:bg-background/50'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-background/50'
                                 }`}
                         >
                             <PlusCircle className="h-4 w-4" />
@@ -268,8 +291,8 @@ function OnboardingContent() {
                             type="button"
                             onClick={() => setMode('link')}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'link'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:bg-background/50'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-background/50'
                                 }`}
                         >
                             <LinkIcon className="h-4 w-4" />

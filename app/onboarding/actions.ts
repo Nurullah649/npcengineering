@@ -393,7 +393,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         return {
             success: true,
             message: 'Kafe başarıyla oluşturuldu!',
-            redirectUrl: `https://siparisgo.npcengineering.com/login`
+            redirectUrl: `https://siparisgo.npcengineering.com/dashboard`
         }
 
     } catch (error) {
@@ -424,10 +424,14 @@ export async function linkSiparisGoAccount(formData: {
         }
 
         // 2. Order Check
+        // UUID Format Kontrolü
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(formData.orderId);
+        const idField = isUUID ? 'id' : 'shopier_order_id';
+
         const { data: order } = await npcClient
             .from('orders')
             .select('*')
-            .eq('id', formData.orderId)
+            .eq(idField, formData.orderId)
             .single()
 
         if (!order) {
@@ -607,7 +611,7 @@ export async function linkSiparisGoAccount(formData: {
         return {
             success: true,
             message: 'Hesap başarıyla bağlandı!',
-            redirectUrl: `https://siparisgo.npcengineering.com/login`
+            redirectUrl: `https://siparisgo.npcengineering.com/dashboard`
         }
 
     } catch (error) {
@@ -616,5 +620,135 @@ export async function linkSiparisGoAccount(formData: {
             success: false,
             error: 'Bir hata oluştu.'
         }
+    }
+}
+
+// Otomatik Abonelik Uzatma
+// Kullanıcı zaten kurulmuş bir hesaba sahipse, yeni siparişi direkt uzatma olarak işler
+export async function autoExtendSubscription(orderId: string): Promise<ActionResult> {
+    try {
+        const npcClient = await getNpcEngineeringClient()
+        const { data: { user } } = await npcClient.auth.getUser()
+
+        if (!user) return { success: false, error: 'Oturum gerekli' }
+
+        // 1. Sipariş Kontrolü
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+        const idField = isUUID ? 'id' : 'shopier_order_id';
+
+        const { data: order } = await npcClient
+            .from('orders')
+            .select(`
+                id, 
+                user_id, 
+                status, 
+                product_id,
+                products(slug),
+                packages(duration_months)
+            `)
+            .eq(idField, orderId)
+            .maybeSingle()
+
+        if (!order) return { success: false, error: 'Sipariş bulunamadı' }
+        if (order.user_id !== user.id) return { success: false, error: 'Yetkisiz erişim' }
+        if (order.status === 'completed') {
+            // Zaten tamamlanmışsa, belki kullanıcı sayfayı yeniledi
+            // Başarılı dönelim ki yönlendirsin
+            return { success: true, message: 'İşlem zaten tamamlanmış', redirectUrl: 'https://siparisgo.npcengineering.com/login' }
+        }
+
+        // 2. Mevcut Hesap Kontrolü (User Product Accounts)
+        // Bu kullanıcının bu ürün (siparisgo) için zaten bir hesabı var mı?
+        const { data: accounts } = await npcClient
+            .from('user_product_accounts')
+            .select('*, subscriptions(id, status, end_date)')
+            .eq('user_id', user.id)
+            .eq('product_id', order.product_id)
+
+        // Eğer hesap yoksa, auto-extend yapamayız. Kullanıcı form doldurmalı.
+        if (!accounts || accounts.length === 0) {
+            return { success: false, error: 'Mevcut hesap bulunamadı' }
+        }
+
+        const account = accounts[0]; // İlk hesabı baz alıyoruz (Genelde 1 tane olur)
+
+        // 3. SiparisGO DB Bağlantısı
+        if (!siparisgoDb) return { success: false, error: 'Sistem hatası' }
+
+        // 4. Süre Hesapla
+        // @ts-ignore
+        const durationMonths = order.packages?.duration_months || 1;
+
+        // Mevcut bitiş tarihini al
+        let currentEndDate = new Date();
+        // @ts-ignore
+        if (account.subscriptions?.end_date) {
+            // @ts-ignore
+            const subEndDate = new Date(account.subscriptions.end_date);
+            if (subEndDate > currentEndDate) {
+                currentEndDate = subEndDate;
+            }
+        }
+
+        // Yeni bitiş tarihi
+        const newEndDate = new Date(currentEndDate);
+        newEndDate.setMonth(newEndDate.getMonth() + durationMonths);
+
+        // 5. Güncellemeleri Yap
+
+        // A) SiparisGO 'cafes' tablosu güncelleme
+        const { error: cafeError } = await siparisgoDb
+            .from('cafes')
+            .update({ subscription_end_date: newEndDate.toISOString() })
+            .eq('username', account.username) // Username üzerinden eşleştirme
+
+        if (cafeError) {
+            console.error('AutoExtend cafe update error:', cafeError);
+            // Devam edelim, kritik değil (NPC tarafını güncelleyelim en azından)
+        }
+
+        // B) NPC 'subscriptions' tablosu güncelleme (Mevcut aboneliği uzat)
+        if (account.subscription_id) {
+            await npcClient
+                .from('subscriptions')
+                .update({
+                    end_date: newEndDate.toISOString(),
+                    status: 'active'
+                })
+                .eq('id', account.subscription_id)
+        }
+
+        // C) Siparişi tamamla
+        // DİKKAT: Yeni siparişin 'subscriptions' tablosunda kendi kaydı OLMALI MI?
+        // Yoksa eski aboneliği mi uzatıyoruz?
+        // Mantıken: Bir kullanıcının bir ürüne 1 aboneliği olur (genelde).
+        // Eski aboneliği uzattık. Yeni siparişi 'completed' yapıp bırakıyoruz.
+        // FAKAT: createCafe fonksiyonu yeni bir subscription satırı oluşturmuyor muydu?
+        // createCafe: Eğer existingSub yoksa oluşturuyor.
+        // Biz burada existingSub'ı (eski siparişin aboneliğini) uzattık.
+        // Bu YENİ sipariş için de bir subscription kaydı açmalı mıyız?
+        // Genelde hayır, "Abonelik" tekil bir varlık, "Sipariş" çoğul.
+        // Ama kullanıcı "Siparişlerim" altında bu siparişi görecek.
+        // Aboneliklerim sayfasında ise TEK bir kart görüyor (son durumu).
+        // O yüzden mevcut aboneliği update etmek doğru.
+
+        // Siparişi kapat
+        await npcClient
+            .from('orders')
+            .update({
+                status: 'completed',
+                updated_at: new Date().toISOString()
+            })
+            .eq(idField, orderId)
+
+        return {
+            success: true,
+            message: 'Abonelik süreniz başarıyla uzatıldı!',
+            redirectUrl: 'https://siparisgo.npcengineering.com/dashboard'
+        }
+
+    } catch (error) {
+        console.error('AutoExtend error:', error);
+        return { success: false, error: 'Beklenmeyen hata' }
     }
 }
