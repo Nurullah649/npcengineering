@@ -709,7 +709,7 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
             return {
                 status: 'extended',
                 message: 'İşlem daha önce tamamlanmış.',
-                redirectUrl: 'https://siparisgo.npcengineering.com/dashboard'
+                redirectUrl: 'https://siparisgo.npcengineering.com/'
             }
         }
 
@@ -809,7 +809,7 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         return {
             status: 'extended',
             message: 'Aboneliğiniz başarıyla uzatıldı!',
-            redirectUrl: 'https://siparisgo.npcengineering.com/dashboard'
+            redirectUrl: 'https://siparisgo.npcengineering.com/'
         }
 
     } catch (error) {
@@ -962,7 +962,7 @@ export async function autoExtendSubscription(orderId: string): Promise<ActionRes
         return {
             success: true,
             message: 'Abonelik süreniz başarıyla uzatıldı!',
-            redirectUrl: 'https://siparisgo.npcengineering.com/dashboard'
+            redirectUrl: 'https://siparisgo.npcengineering.com/'
         }
 
     } catch (error) {
