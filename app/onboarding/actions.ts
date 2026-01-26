@@ -2,6 +2,7 @@
 
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { siparisgoDb, generateUniqueSlug } from '@/lib/siparisgo-db'
 import { redirect } from 'next/navigation'
@@ -22,9 +23,8 @@ interface ActionResult {
 }
 
 // Server-side Supabase client for npcengineering
-async function getNpcEngineeringClient() {
+const getNpcEngineeringClient = async () => {
     const cookieStore = await cookies()
-
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -39,10 +39,26 @@ async function getNpcEngineeringClient() {
                             cookieStore.set(name, value, options as any)
                         )
                     } catch {
-                        // Server Component'tan çağrılırsa sessizce devam et
+                        // The `setAll` method was called from a Server Component.
+                        // This can be ignored if you have middleware refreshing
+                        // user sessions.
                     }
                 },
             },
+        }
+    )
+}
+
+// Admin client to bypass RLS (for subscription updates)
+const getNpcAdminClient = () => {
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
         }
     )
 }
@@ -758,13 +774,18 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
 
         // B) NPC 'subscriptions' Update
         if (account.subscription_id) {
-            await npcClient
+            const adminClient = getNpcAdminClient()
+            const { error: subError } = await adminClient
                 .from('subscriptions')
                 .update({
                     end_date: newEndDate.toISOString(),
                     status: 'active'
                 })
                 .eq('id', account.subscription_id)
+
+            if (subError) {
+                console.error('[AutoExtend] Subscription update error (NPC):', subError)
+            }
         }
 
         // C) Siparişi Kapat
@@ -892,13 +913,18 @@ export async function autoExtendSubscription(orderId: string): Promise<ActionRes
 
         // B) NPC 'subscriptions' tablosu güncelleme (Mevcut aboneliği uzat)
         if (account.subscription_id) {
-            await npcClient
+            const adminClient = getNpcAdminClient()
+            const { error: subError } = await adminClient
                 .from('subscriptions')
                 .update({
                     end_date: newEndDate.toISOString(),
                     status: 'active'
                 })
                 .eq('id', account.subscription_id)
+
+            if (subError) {
+                console.error('[AutoExtend] Subscription update error (NPC):', subError)
+            }
         }
 
         // C) Siparişi tamamla
