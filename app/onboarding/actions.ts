@@ -729,11 +729,18 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         const newEndDate = new Date(currentEndDate);
         newEndDate.setMonth(newEndDate.getMonth() + durationMonths);
 
+        // Decode password
+        let password = '';
+        if (account.password_encrypted) {
+            password = Buffer.from(account.password_encrypted, 'base64').toString('utf-8');
+        }
+
         // A) SiparisGO 'cafes' Update
         const { error: cafeError } = await siparisgoDb
             .from('cafes')
             .update({ subscription_end_date: newEndDate.toISOString() })
             .eq('username', account.username)
+            .eq('password', password)
 
         if (cafeError) console.error('AutoExtend cafe error:', cafeError)
 
@@ -843,10 +850,16 @@ export async function autoExtendSubscription(orderId: string): Promise<ActionRes
         // 5. Güncellemeleri Yap
 
         // A) SiparisGO 'cafes' tablosu güncelleme
+        let password = '';
+        if (account.password_encrypted) {
+            password = Buffer.from(account.password_encrypted, 'base64').toString('utf-8');
+        }
+
         const { error: cafeError } = await siparisgoDb
             .from('cafes')
             .update({ subscription_end_date: newEndDate.toISOString() })
             .eq('username', account.username) // Username üzerinden eşleştirme
+            .eq('password', password)
 
         if (cafeError) {
             console.error('AutoExtend cafe update error:', cafeError);
