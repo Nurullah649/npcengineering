@@ -124,6 +124,34 @@ export function ProductPricing({ product }: ProductPricingProps) {
 
     setIsLoading(true)
 
+    // Ücretsiz / Deneme Sürümü Kontrolü
+    if (displayPrice === 0) {
+      try {
+        const res = await fetch('/api/auth/start-trial', { method: 'POST' })
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Deneme sürümü başlatılamadı')
+        }
+
+        toast.success("Deneme üyeliğiniz başlatıldı! Kuruluma yönlendiriliyorsunuz...")
+
+        // Başarılı olursa dashboard'a (veya kuruluma) yönlendir
+        setTimeout(() => {
+          router.push('/dashboard?welcome=true')
+        }, 1500)
+
+      } catch (error: any) {
+        console.error("Trial error:", error)
+        toast.error(error.message || "Bir hata oluştu")
+      } finally {
+        setIsLoading(false)
+        setIsOpen(false)
+      }
+      return
+    }
+
+    // Normal Ödeme (Ücretli)
     try {
       const response = await fetch("/api/payment", {
         method: "POST",
