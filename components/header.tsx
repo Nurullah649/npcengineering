@@ -94,6 +94,9 @@ export function Header() {
           >
             Hakkımızda
           </Link>
+          <Link href="/contact" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            İletişim
+          </Link>
         </div>
 
         {/* Desktop Auth Buttons */}
@@ -175,6 +178,13 @@ export function Header() {
               onClick={(e) => scrollToSection(e, "about")}
             >
               Hakkımızda
+            </Link>
+            <Link
+              href="/contact"
+              className="block rounded-lg px-3 py-2 text-base text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              İletişim
             </Link>
 
             {/* Mobile Auth Section */}
