@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { MediaUpload } from '@/components/admin/media-upload'
 import {
     Form,
     FormControl,
@@ -34,6 +35,8 @@ const formSchema = z.object({
     features: z.string().optional(),
     tech_stack: z.string().optional(),
     version: z.string().optional(),
+    screenshots: z.array(z.string()).optional(),
+    video_url: z.string().optional().nullable(),
 })
 
 export default function NewProductPage() {
@@ -53,6 +56,8 @@ export default function NewProductPage() {
             features: '',
             tech_stack: '',
             version: '1.0',
+            screenshots: [],
+            video_url: '',
         },
     })
 
@@ -87,6 +92,8 @@ export default function NewProductPage() {
                     features: values.features ? values.features.split('\n').filter(f => f.trim()) : [],
                     tech_stack: values.tech_stack ? values.tech_stack.split(',').map(t => t.trim()).filter(t => t) : [],
                     version: values.version || null,
+                    screenshots: values.screenshots,
+                    video_url: values.video_url || null,
                     last_updated: new Date().toISOString(),
                 })
 
@@ -283,6 +290,24 @@ export default function NewProductPage() {
                                     )}
                                 />
                             </div>
+
+                            {/* Medya Yönetimi */}
+                            <Card className="border-dashed">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Medya Yönetimi</CardTitle>
+                                    <CardDescription>
+                                        Ürün fotoğrafları ve tanıtım videosu
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <MediaUpload
+                                        initialScreenshots={form.watch('screenshots')}
+                                        initialVideoUrl={form.watch('video_url')}
+                                        onScreenshotsChange={(urls) => form.setValue('screenshots', urls)}
+                                        onVideoUrlChange={(url) => form.setValue('video_url', url)}
+                                    />
+                                </CardContent>
+                            </Card>
 
                             <div className="flex gap-4">
                                 <Button type="submit" disabled={saving}>
