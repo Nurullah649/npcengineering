@@ -13,12 +13,17 @@
   1. **1 Aylık Paket** (Fiyat: X TL)
   2. **12 Aylık Paket** (Fiyat: 10 * X TL - 2 ay bedava)
 
-### 5.3. İlk Satın Alma İndirimi
-- **Kural:** Kullanıcının ilk completed siparişi ise:
+### 5.3. Deneme Süresi (Trial) - [YENİ]
+- **Kural:** Yeni kayıt olan her kullanıcıya, satın alma şartı olmaksızın 7 günlük "SiparisGo" deneme aboneliği tanımlanır.
+- **Süreç:** 
+  - Kayıt olma (Register) anında arka planda ücretsiz sipariş ve abonelik oluşturulur.
+  - Deneme süresinin bitimine 2 gün kala (5. gün) kullanıcıya hatırlatma e-postası gönderilir.
+  - Deneme süresi bittiğinde kullanıcı abonelik satın almaya yönlendirilir.
+
+### 5.4. İlk Satın Alma İndirimi
+- **Kural:** Kullanıcının ilk *ücretli* siparişi ise (Deneme süresi sonrası):
   - **1 Aylık Paket:** %50 İndirim (Yarı fiyat).
-  - **12 Aylık Paket:** Toplam fiyattan 0.5 aylık bedel düşülür (10 ay yerine 9.5 ay öder).
-    - Normal Yıllık: 1200 TL (Örnek: Aylık 100 TL ise, 12 ay paket 1000 TL)
-    - İndirimli Yıllık: 1000 TL - (50 TL) = 950 TL (Örnek)
+  - **12 Aylık Paket:** Toplam fiyattan 0.5 aylık bedel düşülür.
 
 ### 5.4. Süre Uzatma (Yenileme)
 - **UI:** Abonelik detay sayfasında "Süre Uzat" butonu.

@@ -79,11 +79,21 @@ export default function RegisterPage() {
       }
 
       toast.success('Hesap oluşturuldu! Giriş yapabilirsiniz.');
+
+      // Deneme sürümünü başlat (Arka planda)
+      if (data.session) {
+        try {
+          await fetch('/api/auth/start-trial', { method: 'POST' });
+        } catch (e) {
+          console.error('Trial start failed', e);
+        }
+      }
+
       // Otomatik giriş yapılmamışsa login sayfasına at
       if (!data.session) {
         router.push('/login?message=check-email');
       } else {
-        router.push('/dashboard');
+        router.push('/dashboard?welcome=true');
         router.refresh();
       }
 

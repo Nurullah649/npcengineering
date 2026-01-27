@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         // Paketi getir (süre hesabı için)
         const { data: pkg, error: pkgError } = await supabase
             .from('packages')
-            .select('duration_months')
+            .select('duration_months, duration_days')
             .eq('id', package_id)
             .single();
 
@@ -139,7 +139,12 @@ export async function POST(request: NextRequest) {
         // Bitiş tarihini hesapla
         const startDate = new Date();
         const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + pkg.duration_months);
+
+        if (pkg.duration_days) {
+            endDate.setDate(endDate.getDate() + pkg.duration_days);
+        } else {
+            endDate.setMonth(endDate.getMonth() + (pkg.duration_months || 1));
+        }
 
         // Abonelik oluştur
         const { data: subscription, error } = await supabase
