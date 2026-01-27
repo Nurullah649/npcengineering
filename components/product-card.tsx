@@ -38,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <Badge variant="secondary" className="text-xs">
               {product.category}
             </Badge>
-            {product.rating && (
+            {(product.rating ?? 0) > 0 && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Star className="h-3 w-3 fill-accent text-accent" />
                 <span>{product.rating}</span>
@@ -63,7 +63,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 </span>
               )}
             </div>
-            {product.downloads && (
+            {(product.downloads ?? 0) > 0 && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Download className="h-3 w-3" />
                 <span>{product.downloads}</span>

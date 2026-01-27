@@ -92,16 +92,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </h1>
 
               <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                {product.rating && (
+                {(product.rating ?? 0) > 0 && (
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-accent text-accent" />
                     <span>{product.rating} / 5</span>
                   </div>
                 )}
-                {product.downloads && (
+                {(product.downloads ?? 0) > 0 && (
                   <div className="flex items-center gap-1">
                     <Download className="h-4 w-4" />
-                    <span>{product.downloads.toLocaleString()} indirme</span>
+                    <span>{product.downloads?.toLocaleString()} indirme</span>
                   </div>
                 )}
                 {product.version && (
