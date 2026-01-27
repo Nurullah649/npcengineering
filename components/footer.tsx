@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Github, Twitter } from "lucide-react"
 
 export function Footer() {
@@ -8,13 +9,13 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-                <span className="text-sm font-bold text-accent-foreground">NPC</span>
+              <div className="relative h-8 w-8">
+                <Image src="/npc_icon.ico" alt="NPC Engineering" fill className="object-contain" />
               </div>
               <span className="text-lg font-semibold text-foreground">NPC Engineering</span>
             </Link>
             <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              Geliştiriciler ve yaratıcılar için yüksek kaliteli dijital ürünler. 
+              Geliştiriciler ve yaratıcılar için yüksek kaliteli dijital ürünler.
               Modern teknolojiler, temiz kod ve kapsamlı dokümantasyon.
             </p>
             <div className="mt-4 flex gap-4">

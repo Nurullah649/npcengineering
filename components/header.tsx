@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X, User, LogOut } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -69,8 +70,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-            <span className="text-sm font-bold text-accent-foreground">NPC</span>
+          <div className="relative h-8 w-8">
+            <Image src="/npc_icon.ico" alt="NPC Engineering" fill className="object-contain" />
           </div>
           <span className="text-lg font-semibold text-foreground">NPC Engineering</span>
         </Link>
