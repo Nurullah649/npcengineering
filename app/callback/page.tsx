@@ -36,27 +36,14 @@ function CallbackContent() {
   const isSuccess = status === "success"
 
   // SiparisGO ürünü için onboarding sayfasına yönlendir (client-side)
+  // iptal edildi: Kullanıcı onayı istedi.
+  /*
   useEffect(() => {
     if (isSuccess && product === "siparisgo" && orderId) {
       router.push(`/onboarding/siparisgo?order_id=${orderId}`)
     }
   }, [isSuccess, product, orderId, router])
-
-  // SiparisGO için yönlendirme bekleniyorsa loading göster
-  if (isSuccess && product === "siparisgo" && orderId) {
-    return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <Header />
-        <main className="flex flex-1 items-center justify-center p-4">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-            <p className="text-muted-foreground">SiparisGO kurulumuna yönlendiriliyorsunuz...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
+  */
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -109,30 +96,35 @@ function CallbackContent() {
           {/* BUTONLAR */}
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             {isSuccess ? (
-              <>
-                {product === "siparisgo" && orderId ? (
-                  <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+              <div className="flex flex-col gap-3 w-full sm:w-auto">
+                {/* 1. Profilime Git */}
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                  <Link href="/dashboard">
+                    <Home className="mr-2 h-4 w-4" />
+                    Profilime Git
+                  </Link>
+                </Button>
+
+                {/* 2. Ürün Sayfasına Git */}
+                {product && (
+                  <Button asChild variant="secondary" className="w-full sm:w-auto">
+                    <Link href={`/products/${product}`}>
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      Ürün Sayfasına Git
+                    </Link>
+                  </Button>
+                )}
+
+                {/* 3. Kurulum (Eğer SiparisGo ise) - Opsiyonel ama faydalı */}
+                {product === "siparisgo" && orderId && (
+                  <Button asChild className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                     <Link href={`/onboarding/siparisgo?order_id=${orderId}`}>
                       Kuruluma Başla
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                ) : (
-                  <Button asChild>
-                    <Link href="/dashboard/orders">
-                      Siparişlerime Git
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
                 )}
-
-                <Button variant="outline" asChild>
-                  <Link href="/">
-                    <Home className="mr-2 h-4 w-4" />
-                    Ana Sayfa
-                  </Link>
-                </Button>
-              </>
+              </div>
             ) : (
               <>
                 <Button asChild>
