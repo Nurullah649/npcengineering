@@ -40,7 +40,8 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg mb-1">Telefon</h3>
-                                        <p className="text-accent-foreground/80">+90 555 555 55 55</p>
+                                        <p className="text-accent-foreground/80">+90 555 026 59 47</p>
+                                        <p className="text-accent-foreground/80">+90 545 314 55 65</p>
                                         <p className="text-sm text-accent-foreground/60 mt-1">Hafta içi 09:00 - 18:00</p>
                                     </div>
                                 </div>
@@ -51,7 +52,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg mb-1">E-posta</h3>
-                                        <p className="text-accent-foreground/80">contact@npcengineering.com</p>
+                                        <p className="text-accent-foreground/80">support@npcengineering.com</p>
                                         <p className="text-sm text-accent-foreground/60 mt-1">Her zaman bize yazabilirsiniz</p>
                                     </div>
                                 </div>
@@ -62,7 +63,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-lg mb-1">Konum</h3>
-                                        <p className="text-accent-foreground/80">İstanbul, Türkiye</p>
+                                        <p className="text-accent-foreground/80">Konya, Türkiye</p>
                                         <p className="text-sm text-accent-foreground/60 mt-1">NPC Engineering HQ</p>
                                     </div>
                                 </div>
