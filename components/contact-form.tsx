@@ -70,72 +70,70 @@ export function ContactForm() {
     }
 
     return (
-        <Card className="w-full max-w-md mx-auto">
-            <CardHeader>
-                <CardTitle>İletişime Geç</CardTitle>
-                <CardDescription>
-                    Sorularınız için aşağıdaki formu doldurarak bize ulaşabilirsiniz.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Ad Soyad</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Adınız Soyadınız" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>E-posta</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="ornek@mail.com" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="message"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Mesaj</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Mesajınızı buraya yazın..."
-                                            className="resize-none min-h-[120px]"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Gönderiliyor...
-                                </>
-                            ) : (
-                                "Gönder"
-                            )}
-                        </Button>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
+        <div className="w-full">
+            <div className="mb-6">
+                <h2 className="text-2xl font-bold">Mesaj Gönderin</h2>
+                <p className="text-muted-foreground mt-2">
+                    Aşağıdaki formu doldurun, en kısa sürede size dönüş yapalım.
+                </p>
+            </div>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Ad Soyad</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Adınız Soyadınız" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>E-posta</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="ornek@mail.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="message"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Mesaj</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Mesajınızı buraya yazın..."
+                                        className="resize-none min-h-[120px]"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Gönderiliyor...
+                            </>
+                        ) : (
+                            "Gönder"
+                        )}
+                    </Button>
+                </form>
+            </Form>
+        </div>
     )
 }
