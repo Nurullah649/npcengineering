@@ -113,7 +113,37 @@ export function ProductPricing({ product }: ProductPricingProps) {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  // Ödeme işlemini başlatan fonksiyon
+  // Deneme Sürümü Başlatma (Modal Açmadan)
+  const handleTrialStart = async () => {
+    if (!user) {
+      router.push(`/login?redirect=/products/${product.slug}`)
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const res = await fetch('/api/auth/start-trial', { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Deneme sürümü başlatılamadı')
+      }
+
+      toast.success("Deneme üyeliğiniz başlatıldı! Kuruluma yönlendiriliyorsunuz...")
+
+      setTimeout(() => {
+        router.push('/dashboard?welcome=true')
+      }, 1500)
+
+    } catch (error: any) {
+      console.error("Trial error:", error)
+      toast.error(error.message || "Bir hata oluştu")
+      setIsLoading(false) // Sadece hata durumunda loading'i kapat, başarıda yönleniyor
+    }
+  }
+
+  // Ödeme işlemini başlatan fonksiyon (Modal içinden tetiklenir)
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -123,33 +153,6 @@ export function ProductPricing({ product }: ProductPricingProps) {
     }
 
     setIsLoading(true)
-
-    // Ücretsiz / Deneme Sürümü Kontrolü
-    if (displayPrice === 0) {
-      try {
-        const res = await fetch('/api/auth/start-trial', { method: 'POST' })
-        const data = await res.json()
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Deneme sürümü başlatılamadı')
-        }
-
-        toast.success("Deneme üyeliğiniz başlatıldı! Kuruluma yönlendiriliyorsunuz...")
-
-        // Başarılı olursa dashboard'a (veya kuruluma) yönlendir
-        setTimeout(() => {
-          router.push('/dashboard?welcome=true')
-        }, 1500)
-
-      } catch (error: any) {
-        console.error("Trial error:", error)
-        toast.error(error.message || "Bir hata oluştu")
-      } finally {
-        setIsLoading(false)
-        setIsOpen(false)
-      }
-      return
-    }
 
     // Normal Ödeme (Ücretli)
     try {
@@ -308,10 +311,17 @@ export function ProductPricing({ product }: ProductPricingProps) {
         <Button
           size="lg"
           className="w-full text-lg h-12"
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            if (displayPrice === 0) {
+              handleTrialStart()
+            } else {
+              setIsOpen(true)
+            }
+          }}
+          disabled={isLoading}
         >
-          <ShoppingCart className="mr-2 h-5 w-5" />
-          Satın Al - {formatPrice(displayPrice)}
+          {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
+          {displayPrice === 0 ? "Ücretsiz Denemeyi Başlat" : `Satın Al - ${formatPrice(displayPrice)}`}
         </Button>
 
         {/* MODAL */}

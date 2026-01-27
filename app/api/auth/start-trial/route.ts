@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
             .insert({
                 user_id: user.id,
                 amount: 0,
-                currency: 'TRY',
                 status: 'paid', // Immediately paid
                 payment_method: 'trial',
                 package_id: trialPackage.id
