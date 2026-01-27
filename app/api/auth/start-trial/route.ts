@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
                 amount: 0,
                 status: 'paid', // Immediately paid
-                payment_method: 'trial',
                 package_id: trialPackage.id
             })
             .select()
