@@ -36,7 +36,7 @@ const formSchema = z.object({
     tech_stack: z.string().optional(),
     version: z.string().optional(),
     screenshots: z.array(z.string()).optional(),
-    video_url: z.string().optional().nullable(),
+    video_urls: z.array(z.string()).optional(),
 })
 
 export default function NewProductPage() {
@@ -57,7 +57,7 @@ export default function NewProductPage() {
             tech_stack: '',
             version: '1.0',
             screenshots: [],
-            video_url: '',
+            video_urls: [],
         },
     })
 
@@ -93,7 +93,7 @@ export default function NewProductPage() {
                     tech_stack: values.tech_stack ? values.tech_stack.split(',').map(t => t.trim()).filter(t => t) : [],
                     version: values.version || null,
                     screenshots: values.screenshots,
-                    video_url: values.video_url || null,
+                    video_urls: values.video_urls || [],
                     last_updated: new Date().toISOString(),
                 })
 
@@ -302,9 +302,9 @@ export default function NewProductPage() {
                                 <CardContent>
                                     <MediaUpload
                                         initialScreenshots={form.watch('screenshots')}
-                                        initialVideoUrl={form.watch('video_url')}
+                                        initialVideoUrls={form.watch('video_urls')}
                                         onScreenshotsChange={(urls) => form.setValue('screenshots', urls)}
-                                        onVideoUrlChange={(url) => form.setValue('video_url', url)}
+                                        onVideoUrlsChange={(urls) => form.setValue('video_urls', urls)}
                                     />
                                 </CardContent>
                             </Card>

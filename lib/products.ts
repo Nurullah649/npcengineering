@@ -11,6 +11,7 @@ export interface Product {
   category: string
   features: string[]
   screenshots: string[]
+  videoUrls?: string[] // SQL: video_urls
   techStack?: string[]
   version?: string
   lastUpdated?: string // Veritabanındaki last_updated
@@ -41,6 +42,7 @@ const mapDatabaseToProduct = (data: any): Product => ({
   category: data.category,
   features: data.features || [],
   screenshots: data.screenshots || [],
+  videoUrls: data.video_urls || [],         // SQL: video_urls
   techStack: data.tech_stack || [],         // SQL: tech_stack
   version: data.version,
   lastUpdated: data.last_updated,           // SQL: last_updated

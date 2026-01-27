@@ -71,6 +71,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <div>
               <ProductScreenshots
                 screenshots={product.screenshots}
+                videoUrls={product.videoUrls}
                 productName={product.name}
                 category={product.category}
               />
