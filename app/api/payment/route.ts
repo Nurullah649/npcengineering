@@ -110,10 +110,25 @@ export async function POST(request: NextRequest) {
 
         const isFirstTimeBuyer = count === 0;
 
+        // Referans İndirimi Kontrolü
+        let referralDiscountRate = 0;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('referral_count')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.referral_count) {
+          referralDiscountRate = Math.min(profile.referral_count * 5, 50);
+        }
+
+        let originalPriceForCalc = basePrice;
+        let discountedPrice = basePrice;
+
         if (isFirstTimeBuyer) {
           if (pkg.duration_months === 1) {
             // Aylık Paket: %50 İndirim
-            finalAmount = basePrice * 0.5;
+            discountedPrice = basePrice * 0.5;
           } else if (pkg.duration_months === 12) {
             // Yıllık Paket: Ekstra 0.5 aylık indirim
             // Paket fiyatından (Aylık paket fiyatının yarısı) kadar düş
@@ -130,10 +145,18 @@ export async function POST(request: NextRequest) {
                 monthlyBasePrice = product.price * monthlyPkg.multiplier;
               }
               const monthlyPrice = monthlyBasePrice || 0;
-              finalAmount = basePrice - (monthlyPrice * 0.5);
+              discountedPrice = basePrice - (monthlyPrice * 0.5);
             }
           }
         }
+
+        // Referans İndirimi Uygula
+        if (referralDiscountRate > 0) {
+          const discountAmount = discountedPrice * (referralDiscountRate / 100);
+          discountedPrice = discountedPrice - discountAmount;
+        }
+
+        finalAmount = discountedPrice;
       }
     }
 

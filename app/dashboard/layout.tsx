@@ -10,6 +10,7 @@ import {
     Package,
     Receipt,
     CreditCard,
+    Users,
     Settings,
     KeyRound,
     MapPin,
@@ -59,6 +60,11 @@ const sidebarItems = [
         title: 'Fatura Adresi',
         href: '/dashboard/settings/billing',
         icon: MapPin,
+    },
+    {
+        title: 'Referanslarım',
+        href: '/dashboard/referrals',
+        icon: Users,
     },
 ]
 
