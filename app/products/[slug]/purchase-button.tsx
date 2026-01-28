@@ -34,11 +34,16 @@ export function ProductPricing({ product }: ProductPricingProps) {
   // Paket Seçimi
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null)
 
-  // Default Paket Seçimi (URL veya İlk Paket)
+  // Auto-open modal logic
   useEffect(() => {
     const urlPackageId = searchParams.get('package')
+    const shouldBuy = searchParams.get('buy') === 'true'
+
     if (urlPackageId && product.packages?.some(p => p.id === urlPackageId)) {
       setSelectedPackageId(urlPackageId)
+      if (shouldBuy) {
+        setIsOpen(true)
+      }
     } else if (product.packages && product.packages.length > 0) {
       // Otomatik ilk paketi seç (Opsiyonel)
       setSelectedPackageId(product.packages[0].id)
@@ -60,6 +65,7 @@ export function ProductPricing({ product }: ProductPricingProps) {
   // Kullanıcı durumu
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
 
   // Auth state kontrolü
   useEffect(() => {
@@ -88,6 +94,25 @@ export function ProductPricing({ product }: ProductPricingProps) {
           email: user.email || '',
           phone: profile?.phone || '',
         }))
+
+        // Check for active subscription or past completed orders
+        // Eğer siparisgo için aktif aboneliği veya geçmiş siparişi varsa trial gösterme.
+        const { count } = await supabase
+          .from('subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .in('status', ['active', 'trialing', 'past_due']); // canceled vs hariç
+
+        // Ayrıca orders tablosuna da bakabiliriz (completed)
+        const { count: orderCount } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'paid');
+
+        if ((count && count > 0) || (orderCount && orderCount > 0)) {
+          setHasActiveSubscription(true);
+        }
       }
     }
 
@@ -308,21 +333,27 @@ export function ProductPricing({ product }: ProductPricingProps) {
         )}
 
         {/* Satın Al Butonu */}
-        <Button
-          size="lg"
-          className="w-full text-lg h-12"
-          onClick={() => {
-            if (displayPrice === 0) {
-              handleTrialStart()
-            } else {
-              setIsOpen(true)
-            }
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
-          {displayPrice === 0 ? "Ücretsiz Denemeyi Başlat" : `Satın Al - ${formatPrice(displayPrice)}`}
-        </Button>
+        {(displayPrice !== 0 || !hasActiveSubscription) ? (
+          <Button
+            size="lg"
+            className="w-full text-lg h-12"
+            onClick={() => {
+              if (displayPrice === 0) {
+                handleTrialStart()
+              } else {
+                setIsOpen(true)
+              }
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
+            {displayPrice === 0 ? "Ücretsiz Denemeyi Başlat" : `Satın Al - ${formatPrice(displayPrice)}`}
+          </Button>
+        ) : (
+          <div className="text-center p-3 bg-muted rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground">7 Günlük Deneme Sürümü daha önce kullanılmış veya aktif üyeliğiniz var.</p>
+          </div>
+        )}
 
         {/* MODAL */}
         {isOpen && (

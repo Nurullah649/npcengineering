@@ -126,7 +126,7 @@ export default function PackagesPage({ params }: { params: Promise<{ slug: strin
         const pkg = packages.find(p => p.id === selectedPackage)
         if (pkg) {
             // Seçilen paketi URL'e ekleyerek ürün sayfasına yönlendir
-            router.push(`/products/${slug}?package=${pkg.id}`)
+            router.push(`/products/${slug}?package=${pkg.id}&buy=true`)
         }
     }
 
