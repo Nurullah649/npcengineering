@@ -56,8 +56,8 @@ export function ProductScreenshots({ screenshots, videoUrls = [], productName, c
     }
 
     // Video Handling
-    // 1. Is it a file? (mp4, webm, ogg) - Check extension roughly
-    const isFile = /\.(mp4|webm|ogg)$/i.test(item.url)
+    // 1. Is it a file? (mp4, webm, ogg) - Check extension roughly, ignoring query params
+    const isFile = /\.(mp4|webm|ogg)(\?|$)/i.test(item.url)
 
     if (isFile) {
       return (
@@ -146,8 +146,8 @@ export function ProductScreenshots({ screenshots, videoUrls = [], productName, c
               type="button"
               onClick={() => setCurrentIndex(index)}
               className={`relative aspect-video w-24 flex-none overflow-hidden rounded-lg border transition-all ${index === currentIndex
-                  ? "border-accent ring-2 ring-accent/20"
-                  : "border-border opacity-70 hover:opacity-100"
+                ? "border-accent ring-2 ring-accent/20"
+                : "border-border opacity-70 hover:opacity-100"
                 }`}
             >
               {item.type === 'video' ? (
