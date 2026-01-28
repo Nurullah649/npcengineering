@@ -138,3 +138,14 @@ export async function getAdminStats() {
         totalRevenue
     }
 }
+
+import { invalidateCache } from '@/lib/cache-utils'
+
+// Cache invalidation action
+export async function revalidateProductCache(tag: string = 'packages') {
+    const supabase = await createClient()
+    await requireAdmin(supabase)
+
+    await invalidateCache(tag)
+    return { success: true, message: 'Önbellek temizlendi' }
+}

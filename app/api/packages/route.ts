@@ -48,46 +48,69 @@ export async function GET(request: NextRequest) {
             // Şimdilik varsayılan fiyattan gösteriyoruz, giriş yapınca indirim çıkacak.
         }
 
-        let query = supabase
-            .from('packages')
-            .select(`
-        id,
-        product_id,
-        name,
-        description,
-        features,
-        duration_months,
-        price,
-        multiplier,
-        discount_percentage,
-        is_active,
-        products (
-          id,
-          name,
-          slug,
-          price
-        )
-      `)
-            .eq('is_active', true)
-            .order('duration_months', { ascending: true });
+        // Cache Key Creation
+        const cacheTags = ['packages'];
+        const cacheKey = ['packages', productId || 'all', productSlug || 'all'];
 
-        // Ürün ID veya slug ile filtrele
-        if (productId) {
-            query = query.eq('product_id', productId);
-        } else if (productSlug) {
-            // Önce ürün ID'sini bul
-            const { data: product } = await supabase
-                .from('products')
-                .select('id')
-                .eq('slug', productSlug)
-                .single();
+        // Veri çekme fonksiyonu (Cached)
+        const fetchPackages = async () => {
+            const supabase = await getSupabaseClient();
+            let query = supabase
+                .from('packages')
+                .select(`
+            id,
+            product_id,
+            name,
+            description,
+            features,
+            duration_months,
+            price,
+            multiplier,
+            discount_percentage,
+            is_active,
+            products (
+              id,
+              name,
+              slug,
+              price
+            )
+          `)
+                .eq('is_active', true)
+                .order('duration_months', { ascending: true });
 
-            if (product) {
-                query = query.eq('product_id', product.id);
+            // Ürün ID veya slug ile filtrele
+            if (productId) {
+                query = query.eq('product_id', productId);
+            } else if (productSlug) {
+                // Önce ürün ID'sini bul (Bu da belki cache'lenebilir ama şimdilik basit tutalım)
+                const { data: product } = await supabase
+                    .from('products')
+                    .select('id')
+                    .eq('slug', productSlug)
+                    .single();
+
+                if (product) {
+                    query = query.eq('product_id', product.id);
+                } else {
+                    // Slug bulunamadıysa boş dön
+                    return { data: [], error: null };
+                }
             }
-        }
 
-        const { data: packages, error } = await query;
+            return await query;
+        };
+
+        // Cache Utility Kullanımı
+        const { cachedQuery } = await import('@/lib/cache-utils');
+        const { data: packages, error } = await cachedQuery(
+            async () => {
+                const result = await fetchPackages();
+                if (result.error) throw result.error;
+                return { data: result.data, error: null };
+            },
+            cacheKey,
+            { tags: cacheTags, revalidate: 3600 } // 1 saat cache
+        );
 
         if (error) {
             console.error('[Packages API] Error:', error);

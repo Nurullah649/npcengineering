@@ -23,6 +23,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
+import { revalidateProductCache } from '@/app/admin/actions'
 
 const formSchema = z.object({
     name: z.string().min(2, 'Ürün adı en az 2 karakter olmalı'),
@@ -123,6 +124,7 @@ export default function EditProductPage() {
 
             if (error) throw error
 
+            await revalidateProductCache('packages') // Cache invalidation
             toast.success('Ürün başarıyla güncellendi!')
             router.push('/admin/products')
         } catch (error: any) {
