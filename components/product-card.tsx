@@ -16,15 +16,30 @@ export function ProductCard({ product }: ProductCardProps) {
     <Link href={`/products/${product.slug}`} className="group block">
       <div className="relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-accent hover:shadow-lg hover:shadow-accent/5">
         {/* Preview Image Area */}
-        <div className="relative aspect-video bg-secondary/50">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
-                <span className="text-lg font-bold text-accent">NPC</span>
+        <div className="relative aspect-video bg-secondary/50 overflow-hidden">
+          {product.coverImage ? (
+            <img
+              src={product.coverImage}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : product.screenshots && product.screenshots.length > 0 ? (
+            <img
+              src={product.screenshots[0]}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
+                  <span className="text-lg font-bold text-accent">NPC</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{product.category}</p>
               </div>
-              <p className="text-xs text-muted-foreground">{product.category}</p>
             </div>
-          </div>
+          )}
+
           {discount > 0 && (
             <Badge className="absolute right-3 top-3 bg-accent text-accent-foreground">
               -{discount}%
