@@ -8,6 +8,7 @@ export interface Product {
   shortDescription?: string
   price: number
   originalPrice?: number
+  coverImage?: string       // SQL: cover_image
   category: string
   features: string[]
   screenshots: string[]
@@ -39,6 +40,7 @@ const mapDatabaseToProduct = (data: any): Product => ({
   shortDescription: data.short_description, // SQL: short_description
   price: data.price,
   originalPrice: data.original_price,       // SQL: original_price
+  coverImage: data.cover_image,             // SQL: cover_image
   category: data.category,
   features: data.features || [],
   screenshots: data.screenshots || [],

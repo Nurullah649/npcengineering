@@ -56,41 +56,45 @@ export function ProductScreenshots({ screenshots, videoUrls = [], productName, c
     }
 
     // Video Handling
-    // 1. Is it a file? (mp4, webm, ogg) - Check extension roughly, ignoring query params
-    const isFile = /\.(mp4|webm|ogg)(\?|$)/i.test(item.url)
 
-    if (isFile) {
-      return (
-        <video
-          src={item.url}
-          controls
-          className="h-full w-full object-contain bg-black"
-          {...(autoPlay ? { autoPlay: true, muted: true } : {})}
-        />
-      )
-    }
-
-    // 2. Is it YouTube? (Very basic check - improved regex needed for robust apps, but simple here)
+    // 1. Is it YouTube?
     // https://www.youtube.com/watch?v=VIDEO_ID -> embed/VIDEO_ID
     // https://youtu.be/VIDEO_ID -> embed/VIDEO_ID
-    let embedUrl = item.url
+    let embedUrl = null
     if (item.url.includes('youtube.com/watch')) {
       const videoId = item.url.split('v=')[1]?.split('&')[0]
       if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`
     } else if (item.url.includes('youtu.be/')) {
       const videoId = item.url.split('youtu.be/')[1]?.split('?')[0]
       if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`
+    } else if (item.url.includes('vimeo.com/')) {
+      // Vimeo Logic (Basic)
+      const videoId = item.url.split('vimeo.com/')[1]?.split('?')[0]
+      if (videoId) embedUrl = `https://player.vimeo.com/video/${videoId}`
     }
 
+    if (embedUrl) {
+      return (
+        <iframe
+          src={embedUrl}
+          className="h-full w-full"
+          title={`Video ${productName}`}
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      )
+    }
+
+    // 2. Default to HTML5 Video (Direct file or unknown source)
+    // We assume if it's in videoUrls and not an embed, it's a video file.
     return (
-      <iframe
-        src={embedUrl}
-        className="h-full w-full"
-        title={`Video ${productName}`}
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      ></iframe>
+      <video
+        src={item.url}
+        controls
+        className="h-full w-full object-contain bg-black"
+        {...(autoPlay ? { autoPlay: true, muted: true } : {})}
+      />
     )
   }
 

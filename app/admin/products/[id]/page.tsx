@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MediaUpload } from '@/components/admin/media-upload'
+import { SingleImageUpload } from '@/components/admin/single-image-upload'
 import {
     Form,
     FormControl,
@@ -32,6 +33,7 @@ const formSchema = z.object({
     short_description: z.string().optional(),
     price: z.coerce.number().min(1, 'Fiyat 1 TL veya üzeri olmalı'),
     original_price: z.coerce.number().optional(),
+    cover_image: z.string().optional(),
     category: z.string().min(2, 'Kategori gerekli'),
     features: z.string().optional(),
     tech_stack: z.string().optional(),
@@ -57,6 +59,7 @@ export default function EditProductPage() {
             short_description: '',
             price: 0,
             original_price: 0,
+            cover_image: '',
             category: '',
             features: '',
             tech_stack: '',
@@ -87,6 +90,7 @@ export default function EditProductPage() {
                 short_description: data.short_description || '',
                 price: data.price || 0,
                 original_price: data.original_price || 0,
+                cover_image: data.cover_image || '',
                 category: data.category || '',
                 features: data.features?.join('\n') || '',
                 tech_stack: data.tech_stack?.join(', ') || '',
@@ -112,6 +116,7 @@ export default function EditProductPage() {
                     short_description: values.short_description || null,
                     price: values.price,
                     original_price: values.original_price || null,
+                    cover_image: values.cover_image || null,
                     category: values.category,
                     features: values.features ? values.features.split('\n').filter(f => f.trim()) : [],
                     tech_stack: values.tech_stack ? values.tech_stack.split(',').map(t => t.trim()).filter(t => t) : [],
@@ -133,6 +138,7 @@ export default function EditProductPage() {
             setSaving(false)
         }
     }
+
 
     if (loading) {
         return (
@@ -318,7 +324,15 @@ export default function EditProductPage() {
                                         Ürün fotoğrafları ve tanıtım videosu
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-6">
+                                    <SingleImageUpload
+                                        label="Kapak Görseli (Liste sayfaları için)"
+                                        value={form.watch('cover_image')}
+                                        onChange={(url) => form.setValue('cover_image', url)}
+                                    />
+
+                                    <div className="border-t pt-4"></div>
+
                                     <MediaUpload
                                         initialScreenshots={form.watch('screenshots')}
                                         initialVideoUrls={form.watch('video_urls')}

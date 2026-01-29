@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         // OR we find by name "7 Günlük Deneme"
         const { data: trialPackage, error: pkgError } = await supabase
             .from('packages')
-            .select('id, duration_days')
+            .select('id, duration_days, product_id')
             .eq('name', '7 Günlük Deneme')
             .single();
 
@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
                 amount: 0,
                 status: 'paid', // Immediately paid
-                package_id: trialPackage.id
+                package_id: trialPackage.id,
+                product_id: trialPackage.product_id
             })
             .select()
             .single();
@@ -76,11 +77,7 @@ export async function POST(request: NextRequest) {
             .from('subscriptions')
             .insert({
                 user_id: user.id,
-                // We need product_id. Let's fetch it or rely on the package relation if possible, 
-                // but subscription table requires product_id usually.
-                // Let's get product_id from the package query above or separate query.
-                // I will update the package query to include product_id.
-                product_id: (await supabase.from('packages').select('product_id').eq('id', trialPackage.id).single()).data?.product_id,
+                product_id: trialPackage.product_id,
                 package_id: trialPackage.id,
                 order_id: order.id,
                 start_date: startDate.toISOString(),
