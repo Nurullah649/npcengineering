@@ -36,7 +36,7 @@ export async function registerUser(prevState: any, formData: FormData) {
             fullName: formData.get('fullName'),
             email: formData.get('email'),
             password: formData.get('password'),
-            referralCode: formData.get('referralCode'),
+            referralCode: formData.get('referralCode')?.toString() || undefined,
         }
 
         const validatedData = registerSchema.parse(rawData)
