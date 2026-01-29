@@ -343,7 +343,7 @@ export default function SubscriptionsPage() {
                                         </a>
                                     </Button>
                                     <Button size="sm" className="gap-2" asChild>
-                                        <a href={`/products/${subscription.products?.slug || 'siparisgo'}/packages`}>
+                                        <a href={`/products/${subscription.products?.slug || 'siparisgo'}`}>
                                             <RefreshCw className="h-4 w-4" />
                                             {subscription.is_expired ? 'Yenile' : 'Süre Uzat'}
                                         </a>
