@@ -10,7 +10,7 @@ import * as z from 'zod';
 import { Loader2, UserPlus, Eye, EyeOff, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { supabase } from '@/lib/supabase';
+import { registerUser } from './actions'; // Server Action Import
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -72,41 +72,26 @@ function RegisterForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      // Supabase'e kayıt ol
-      const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          data: {
-            full_name: values.fullName,
-            referral_code: values.referralCode, // Trigger için metadata olarak gönderiyoruz
-          },
-        },
-      });
+      const formData = new FormData();
+      formData.append('fullName', values.fullName);
+      formData.append('email', values.email);
+      formData.append('password', values.password);
+      if (values.referralCode) {
+        formData.append('referralCode', values.referralCode);
+      }
 
-      if (error) {
-        toast.error('Kayıt başarısız: ' + error.message);
+      // Server Action Çağır
+      const result = await registerUser(null, formData);
+
+      if (!result.success) {
+        toast.error('Kayıt başarısız: ' + result.error);
         return;
       }
 
-      toast.success('Hesap oluşturuldu! Giriş yapabilirsiniz.');
+      toast.success(result.message);
 
-      // Deneme sürümünü başlat (Arka planda)
-      if (data.session) {
-        try {
-          await fetch('/api/auth/start-trial', { method: 'POST' });
-        } catch (e) {
-          console.error('Trial start failed', e);
-        }
-      }
-
-      // Otomatik giriş yapılmamışsa login sayfasına at
-      if (!data.session) {
-        router.push('/login?message=check-email');
-      } else {
-        router.push('/dashboard?welcome=true');
-        router.refresh();
-      }
+      // Login sayfasına yönlendir (Mesaj parametresiyle)
+      router.push('/login?message=check-email');
 
     } catch (error) {
       toast.error('Bir hata oluştu.');

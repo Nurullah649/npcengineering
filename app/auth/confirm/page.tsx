@@ -35,8 +35,15 @@ export default function AuthConfirmPage() {
                         return
                     }
 
+                    // Deneme sürümünü başlat
+                    try {
+                        await fetch('/api/auth/start-trial', { method: 'POST' })
+                    } catch (e) {
+                        console.error('Trial start failed during confirmation', e)
+                    }
+
                     setStatus('success')
-                    setMessage(type === 'signup' ? 'Hesabınız onaylandı!' : 'Giriş başarılı!')
+                    setMessage(type === 'signup' ? 'Hesabınız onaylandı! Deneme süreniz başladı.' : 'Giriş başarılı!')
 
                     // 2 saniye sonra dashboard'a yönlendir
                     setTimeout(() => {
