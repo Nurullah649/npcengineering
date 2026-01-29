@@ -65,7 +65,7 @@ function AuthConfirmContent() {
                     setMessage('Hesabınız başarıyla doğrulandı!')
 
                     setTimeout(() => {
-                        router.push('/dashboard')
+                        router.push('/dashboard/subscriptions')
                         router.refresh()
                     }, 2000)
                 } else {

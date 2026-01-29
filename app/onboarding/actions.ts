@@ -434,8 +434,8 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
         // 12. Başarılı - redirect URL döndür
         return {
             success: true,
-            message: 'Kafe başarıyla oluşturuldu!',
-            redirectUrl: `https://siparisgo.npcengineering.com/dashboard`
+            message: 'Kafe başarıyla oluşturuldu! Panel girişine yönlendiriliyorsunuz...',
+            redirectUrl: `https://siparisgo.npcengineering.com/login`
         }
 
     } catch (error) {
