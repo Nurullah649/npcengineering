@@ -274,6 +274,7 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
 
         // 8. Abonelik bitiş tarihini hesapla (Dinamik - Pakete göre)
         let durationMonths = 1;
+        let durationDays = 0;
 
         // Siparişi ve ilişkili paket bilgisini çek
         // (Eğer SQL migration çalıştırıldıysa packages ilişkisi çalışır)
@@ -282,7 +283,8 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
             .select(`
                 package_id,
                 packages (
-                    duration_months
+                    duration_months,
+                    duration_days
                 )
             `)
             .eq(idField, formData.orderId)
@@ -297,13 +299,28 @@ export async function createCafe(formData: CafeFormData): Promise<ActionResult> 
 
         // TypeScript için güvenli erişim (join sonucu tek obje veya array olabilir ama single dediğimiz için obje)
         // @ts-ignore - Supabase type generation güncel olmayabilir
-        if (orderData?.packages?.duration_months) {
+        if (orderData?.packages) {
             // @ts-ignore
-            durationMonths = orderData.packages.duration_months;
+            if (orderData.packages.duration_days && orderData.packages.duration_days > 0) {
+                // @ts-ignore
+                durationDays = orderData.packages.duration_days;
+            }
+            // @ts-ignore
+            if (orderData.packages.duration_months) {
+                // @ts-ignore
+                durationMonths = orderData.packages.duration_months;
+            }
         }
 
         const subscriptionEndDate = new Date()
-        subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + durationMonths)
+
+        if (durationDays > 0) {
+            // Gün bazlı hesapla (Deneme sürümü öncelikli)
+            subscriptionEndDate.setDate(subscriptionEndDate.getDate() + durationDays)
+        } else {
+            // Ay bazlı hesapla
+            subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + durationMonths)
+        }
 
         // *** SON KONTROL ***
         // Eğer username doluysa ve sahibi ben değilsem -> HATA
