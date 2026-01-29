@@ -697,7 +697,10 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
                 user_id, 
                 status, 
                 product_id,
-                packages(duration_months)
+                packages(
+                    duration_months,
+                    duration_days
+                )
             `)
             .eq(idField, orderId)
             .maybeSingle()
@@ -765,8 +768,22 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         if (!siparisgoDb) return { status: 'error', message: 'Sistem hatası' }
 
         // Süre hesapla
+        let durationMonths = 1;
+        let durationDays = 0;
+
         // @ts-ignore
-        const durationMonths = order.packages?.duration_months || 1;
+        if (order.packages) {
+            // @ts-ignore
+            if (order.packages.duration_days && order.packages.duration_days > 0) {
+                // @ts-ignore
+                durationDays = order.packages.duration_days;
+            }
+            // @ts-ignore
+            if (order.packages.duration_months) {
+                // @ts-ignore
+                durationMonths = order.packages.duration_months;
+            }
+        }
 
         // Mevcut bitiş tarihini al (Hesaptan veya Subscription'dan)
         let currentEndDate = new Date();
@@ -781,7 +798,12 @@ export async function checkAndExtendSubscription(orderId: string): Promise<{
         }
 
         const newEndDate = new Date(currentEndDate);
-        newEndDate.setMonth(newEndDate.getMonth() + durationMonths);
+
+        if (durationDays > 0) {
+            newEndDate.setDate(newEndDate.getDate() + durationDays);
+        } else {
+            newEndDate.setMonth(newEndDate.getMonth() + durationMonths);
+        }
 
         // Decode password
         let password = '';
