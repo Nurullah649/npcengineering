@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,19 +10,32 @@ import Link from 'next/link'
 
 export default function AuthConfirmPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
     const [message, setMessage] = useState('')
 
     useEffect(() => {
         const handleAuthCallback = async () => {
             try {
-                // URL'deki hash fragment'ı işle
+                // URL'deki hash fragment'ı veya query param'ı işle
                 const hashParams = new URLSearchParams(window.location.hash.substring(1))
                 const accessToken = hashParams.get('access_token')
                 const refreshToken = hashParams.get('refresh_token')
                 const type = hashParams.get('type')
 
-                if (accessToken && refreshToken) {
+                // Query param'dan 'code' kontrolü
+                const code = searchParams.get('code')
+
+                if (code) {
+                    // Code varsa session ile takas et
+                    const { error } = await supabase.auth.exchangeCodeForSession(code)
+                    if (error) {
+                        setStatus('error')
+                        setMessage(error.message)
+                        return
+                    }
+                    // Başarılı ise devam et (Aşağıdaki session kontrolüne düşecek veya direkt trial başlatıp yönlendireceğiz)
+                } else if (accessToken && refreshToken) {
                     // Token'ları kullanarak session oluştur
                     const { error } = await supabase.auth.setSession({
                         access_token: accessToken,
@@ -34,7 +47,12 @@ export default function AuthConfirmPage() {
                         setMessage(error.message)
                         return
                     }
+                }
 
+                // Oturum açılmış mı diye son bir kontrol yap
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+                if (session) {
                     // Deneme sürümünü başlat
                     try {
                         await fetch('/api/auth/start-trial', { method: 'POST' })
@@ -43,24 +61,15 @@ export default function AuthConfirmPage() {
                     }
 
                     setStatus('success')
-                    setMessage(type === 'signup' ? 'Hesabınız onaylandı! Deneme süreniz başladı.' : 'Giriş başarılı!')
+                    setMessage('Hesabınız başarıyla doğrulandı!')
 
-                    // 2 saniye sonra dashboard'a yönlendir
                     setTimeout(() => {
                         router.push('/dashboard')
                         router.refresh()
                     }, 2000)
                 } else {
-                    // Token yoksa mevcut session'ı kontrol et
-                    const { data: { session } } = await supabase.auth.getSession()
-
-                    if (session) {
-                        setStatus('success')
-                        setMessage('Zaten giriş yapmışsınız!')
-                        setTimeout(() => {
-                            router.push('/dashboard')
-                        }, 1500)
-                    } else {
+                    if (!code && !accessToken) {
+                        // Ne code var, ne token var, ne session var -> Hata
                         setStatus('error')
                         setMessage('Geçersiz veya süresi dolmuş bağlantı.')
                     }
@@ -73,7 +82,7 @@ export default function AuthConfirmPage() {
         }
 
         handleAuthCallback()
-    }, [router])
+    }, [router, searchParams])
 
     return (
         <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">

@@ -54,7 +54,7 @@ export async function registerUser(prevState: any, formData: FormData) {
                     full_name: validatedData.fullName,
                     referral_code: validatedData.referralCode,
                 },
-                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`
+                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/auth/confirm`
             }
         })
 
