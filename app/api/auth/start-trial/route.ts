@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, message: 'Trial started' });
+        return NextResponse.json({ success: true, message: 'Trial started', orderId: order.id });
 
     } catch (error) {
         console.error('Start trial error:', error);

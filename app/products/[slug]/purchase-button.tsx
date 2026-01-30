@@ -157,8 +157,10 @@ export function ProductPricing({ product }: ProductPricingProps) {
 
       toast.success("Deneme üyeliğiniz başlatıldı! Kuruluma yönlendiriliyorsunuz...")
 
+      // orderId varsa onboarding'e yönlendir, oradan SiparisGO'ya geçecek
+      const orderId = data.orderId
       setTimeout(() => {
-        router.push('/dashboard?welcome=true')
+        router.push(`/onboarding/siparisgo?order_id=${orderId}`)
       }, 1500)
 
     } catch (error: any) {
