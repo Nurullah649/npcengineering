@@ -20,6 +20,8 @@ import {
     UtensilsCrossed,
     Store
 } from "lucide-react"
+import { getProductBySlug } from "@/lib/products"
+import { ProductScreenshots } from "@/app/products/[slug]/product-screenshots"
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +39,10 @@ export async function generateMetadata() {
     }
 }
 
-export default function SiparisGoPage() {
+export default async function SiparisGoPage() {
+    // Veritabanından ürün verilerini çek (screenshots ve videos için)
+    const product = await getProductBySlug("siparisgo")
+
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <Header />
@@ -114,28 +119,37 @@ export default function SiparisGoPage() {
                                 </div>
                             </div>
 
-                            {/* Sağ Taraf - Görsel */}
+                            {/* Sağ Taraf - Ürün Görselleri & Videoları */}
                             <div className="relative">
-                                <div className="rounded-2xl border border-border bg-gradient-to-b from-card to-background p-8 shadow-2xl">
-                                    <div className="flex items-center justify-center gap-8">
-                                        {/* QR Kod Görseli */}
-                                        <div className="flex flex-col items-center">
-                                            <div className="rounded-xl bg-white p-4">
-                                                <QrCode className="h-32 w-32 text-gray-900" />
-                                            </div>
-                                            <span className="mt-3 text-sm text-muted-foreground">Masa QR Kodu</span>
-                                        </div>
-                                        {/* Telefon Mock */}
-                                        <div className="flex flex-col items-center">
-                                            <div className="rounded-3xl border-4 border-gray-700 bg-gray-900 p-2">
-                                                <div className="h-48 w-24 rounded-2xl bg-gradient-to-b from-orange-500/20 to-orange-600/20 flex items-center justify-center">
-                                                    <Smartphone className="h-12 w-12 text-orange-400" />
+                                {product && ((product.screenshots && product.screenshots.length > 0) || (product.videoUrls && product.videoUrls.length > 0)) ? (
+                                    <ProductScreenshots
+                                        screenshots={product.screenshots || []}
+                                        videoUrls={product.videoUrls || []}
+                                        productName={product.name || "SiparişGo"}
+                                        category={product.category || "Restoran & Kafe"}
+                                    />
+                                ) : (
+                                    <div className="rounded-2xl border border-border bg-gradient-to-b from-card to-background p-8 shadow-2xl">
+                                        <div className="flex items-center justify-center gap-8">
+                                            {/* QR Kod Görseli (Fallback) */}
+                                            <div className="flex flex-col items-center">
+                                                <div className="rounded-xl bg-white p-4">
+                                                    <QrCode className="h-32 w-32 text-gray-900" />
                                                 </div>
+                                                <span className="mt-3 text-sm text-muted-foreground">Masa QR Kodu</span>
                                             </div>
-                                            <span className="mt-3 text-sm text-muted-foreground">Dijital Menü</span>
+                                            {/* Telefon Mock (Fallback) */}
+                                            <div className="flex flex-col items-center">
+                                                <div className="rounded-3xl border-4 border-gray-700 bg-gray-900 p-2">
+                                                    <div className="h-48 w-24 rounded-2xl bg-gradient-to-b from-orange-500/20 to-orange-600/20 flex items-center justify-center">
+                                                        <Smartphone className="h-12 w-12 text-orange-400" />
+                                                    </div>
+                                                </div>
+                                                <span className="mt-3 text-sm text-muted-foreground">Dijital Menü</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
