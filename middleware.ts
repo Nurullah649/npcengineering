@@ -76,13 +76,9 @@ export async function middleware(request: NextRequest) {
 
         let isAdmin = profile?.role === 'admin'
 
-        // ======== ADMIN WHITELIST FIX ========
-        // Email bazlı admin erişimi - SADECE whitelist'teki adresler için
-        const adminWhitelist = ['admin@npcengineering.com', 'support@npcengineering.com']
-        if (!isAdmin && user.email && adminWhitelist.includes(user.email) && user.email_confirmed_at) {
-            isAdmin = true
-        }
-        // =====================================
+        // ======== ADMIN WHITELIST FIX REMOVED ========
+        // Email bazlı admin erişimi veritabanından (profiles.role) yönetilmelidir.
+        // =============================================
 
         if (!isAdmin) {
             const url = request.nextUrl.clone()

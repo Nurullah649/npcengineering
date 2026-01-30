@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
+import { escapeHtml } from '@/lib/utils';
 
 const contactSchema = z.object({
     name: z.string().min(2, 'İsim en az 2 karakter olmalıdır'),
@@ -35,18 +36,22 @@ export async function POST(request: Request) {
             }
         });
 
+        const safeName = escapeHtml(name);
+        const safeEmail = escapeHtml(email);
+        const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+
         const mailOptions = {
             from: `"Web Sitesi İletişim" <${process.env.SMTP_USER}>`,
             to: process.env.MY_EMAIL || process.env.SMTP_USER, // Fallback to sender if receiver not set
             replyTo: email,
-            subject: `Yeni İletişim Formu Mesajı: ${name}`,
+            subject: `Yeni İletişim Formu Mesajı: ${safeName}`,
             text: message,
             html: `
         <h3>Yeni bir mesajın var!</h3>
-        <p><strong>Gönderen:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Gönderen:</strong> ${safeName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
         <p><strong>Mesaj:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
+        <p>${safeMessage}</p>
       `,
         };
 

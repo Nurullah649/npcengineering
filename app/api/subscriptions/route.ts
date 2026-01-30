@@ -59,6 +59,12 @@ export async function GET(request: NextRequest) {
           name,
           duration_months,
           price
+        ),
+        user_product_accounts (
+          id,
+          username,
+          password_encrypted,
+          additional_info
         )
       `)
             .eq('user_id', user.id)

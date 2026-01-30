@@ -50,18 +50,14 @@ interface Subscription {
         duration_months: number
         price: number
     } | null
-}
-
-interface UserAccount {
-    id: string
-    subscription_id: string
-    username: string
-    password_masked: string
-    password_encrypted?: string
-    has_password: boolean
-    additional_info?: {
-        panel_url?: string
-    }
+    user_product_accounts: {
+        id: string
+        username: string
+        password_encrypted?: string
+        additional_info?: {
+            panel_url?: string
+        }
+    }[]
 }
 
 // Base64 decode helper (Safe for SSR & Browser)
@@ -78,7 +74,6 @@ const decodePassword = (encrypted: string) => {
 
 export default function SubscriptionsPage() {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-    const [accounts, setAccounts] = useState<Record<string, UserAccount>>({})
     const [loading, setLoading] = useState(true)
     const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({})
 
@@ -93,39 +88,12 @@ export default function SubscriptionsPage() {
 
             if (data.subscriptions) {
                 setSubscriptions(data.subscriptions)
-
-                // Her abonelik için hesap bilgilerini getir
-                for (const sub of data.subscriptions) {
-                    fetchAccountInfo(sub.id)
-                }
             }
         } catch (error) {
             console.error('Abonelikler yüklenemedi:', error)
             toast.error('Abonelik bilgileri yüklenirken bir hata oluştu.')
         } finally {
             setLoading(false)
-        }
-    }
-
-    const fetchAccountInfo = async (subscriptionId: string) => {
-        try {
-            const response = await fetch(`/api/user-accounts?subscription_id=${subscriptionId}`)
-            const data = await response.json()
-
-            if (data.accounts && data.accounts.length > 0) {
-                setAccounts(prev => ({
-                    ...prev,
-                    [subscriptionId]: data.accounts[0]
-                }))
-            }
-        } catch (error) {
-            console.error('Hesap bilgileri yüklenemedi:', error)
-            // Hesap bilgisi kritik değil, toast göstermeyebiliriz veya sessiz geçebiliriz
-            // Ancak kullanıcı "her hatayı göster" dediği için ekleyelim
-            toast.error('Hesap detayları alınamadı.') // UI'da "Hesap Hazırlanıyor" yazdığı için belki gerekmez.
-            // Ama kullanıcı "bomboş ekrana bakıyor" dedi. 
-            // Burada "Hesap Hazırlanıyor" göründüğü için boş ekran değil.
-            // Yine de soft bir hata bildirimi iyidir.
         }
     }
 
@@ -217,11 +185,16 @@ export default function SubscriptionsPage() {
 
             <div className="grid gap-4">
                 {subscriptions.map((subscription) => {
-                    const account = accounts[subscription.id]
+                    // Hesap bilgisi artık user_product_accounts array'inden geliyor (genelde tek eleman)
+                    const account = subscription.user_product_accounts?.[0]
                     const showPassword = showPasswords[subscription.id]
+                    // Şifre mantığı: Eğer encrypted varsa decode et, yoksa ve "has_password" mantığı (API'de yok edildi, doğrudan encrypted check)
+                    // API'yi değiştirdik, artık direkt veriyi alıyoruz. API'de has_password backend'de hesaplanıyor masked için ama burada direkt datayı çektik.
+                    // Eğer password_encrypted varsa şifre var demektir.
+                    const hasPassword = !!account?.password_encrypted
                     const decodedPassword = account?.password_encrypted
                         ? decodePassword(account.password_encrypted)
-                        : (account?.has_password ? 'gizli-sifre' : 'Belirlenmedi')
+                        : (hasPassword ? 'gizli-sifre' : 'Belirlenmedi')
 
                     return (
                         <Card key={subscription.id} className="overflow-hidden">
