@@ -417,7 +417,8 @@ export default async function SiparisGoPage() {
 
                                 <div className="text-center mb-8">
                                     <div className="flex items-baseline justify-center gap-2">
-                                        <span className="text-5xl font-bold text-foreground">₺199</span>
+                                        {/* GÜNCELLENEN KISIM */}
+                                        <span className="text-5xl font-bold text-foreground">₺1000</span>
                                         <span className="text-muted-foreground">/ay</span>
                                     </div>
                                     <p className="mt-2 text-sm text-green-500">İlk 7 gün ücretsiz</p>
