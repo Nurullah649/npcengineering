@@ -7,6 +7,7 @@ import { z } from 'zod'
 const registerSchema = z.object({
     fullName: z.string().min(2),
     email: z.string().email(),
+    phone: z.string().min(10),
     password: z.string().min(8),
     referralCode: z.string().optional(),
 })
@@ -35,6 +36,7 @@ export async function registerUser(prevState: any, formData: FormData) {
         const rawData = {
             fullName: formData.get('fullName'),
             email: formData.get('email'),
+            phone: formData.get('phone'),
             password: formData.get('password'),
             referralCode: formData.get('referralCode')?.toString() || undefined,
         }
@@ -52,6 +54,7 @@ export async function registerUser(prevState: any, formData: FormData) {
             options: {
                 data: {
                     full_name: validatedData.fullName,
+                    phone: validatedData.phone,
                     referral_code: validatedData.referralCode,
                 },
                 redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/auth/confirm`

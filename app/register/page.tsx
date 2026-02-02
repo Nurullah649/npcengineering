@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, UserPlus, Eye, EyeOff, Tag } from 'lucide-react';
+import { Loader2, UserPlus, Eye, EyeOff, Tag, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { registerUser } from './actions'; // Server Action Import
@@ -33,6 +33,7 @@ import {
 const formSchema = z.object({
   fullName: z.string().min(2, 'Ad Soyad en az 2 karakter olmalı'),
   email: z.string().email('Geçerli bir email adresi giriniz'),
+  phone: z.string().min(10, 'Geçerli bir telefon numarası giriniz').regex(/^[0-9+\-\s()]+$/, 'Telefon numarası sadece rakam ve + - ( ) karakterleri içerebilir'),
   password: z.string()
     .min(8, 'Şifre en az 8 karakter olmalı')
     .regex(/[A-Z]/, 'Şifre en az bir büyük harf içermeli')
@@ -56,6 +57,7 @@ function RegisterForm() {
     defaultValues: {
       fullName: '',
       email: '',
+      phone: '',
       password: '',
       confirmPassword: '',
       referralCode: '',
@@ -75,6 +77,7 @@ function RegisterForm() {
       const formData = new FormData();
       formData.append('fullName', values.fullName);
       formData.append('email', values.email);
+      formData.append('phone', values.phone);
       formData.append('password', values.password);
       if (values.referralCode) {
         formData.append('referralCode', values.referralCode);
@@ -140,6 +143,23 @@ function RegisterForm() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="ornek@domain.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Telefon Numarası
+                  </FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="0555 123 45 67" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
