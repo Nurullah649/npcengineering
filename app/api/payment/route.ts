@@ -5,6 +5,7 @@ import { getProductBySlug } from '@/lib/products';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { validatePaymentRequest, sanitizeInput } from '@/lib/payment-validation';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 
 // ... Enum tanımları (ProductType, CurrencyType) aynı kalsın ...
 enum ProductType {
@@ -13,6 +14,12 @@ enum ProductType {
   DEFAULT = 2
 }
 enum CurrencyType { TL = 0, USD = 1, EUR = 2 }
+
+// Payment için rate limit config (dakikada 5 istek)
+const paymentRateLimitConfig = {
+  maxRequests: 5,
+  windowMs: 60 * 1000 // 1 dakika
+};
 
 // Server-side auth için Supabase client
 async function getAuthClient() {
@@ -34,6 +41,21 @@ async function getAuthClient() {
 // ARTIK "POST" KULLANIYORUZ
 export async function POST(request: NextRequest) {
   try {
+    // ======== RATE LIMITING ========
+    const clientIP = getClientIP(request);
+    const rateLimit = checkRateLimit(`payment:${clientIP}`, paymentRateLimitConfig);
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Çok fazla ödeme isteği. Lütfen bekleyin.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': Math.ceil(rateLimit.resetIn / 1000).toString() }
+        }
+      );
+    }
+    // ================================
+
     // 1. Frontend'den gelen JSON verisini oku
     const body = await request.json();
 

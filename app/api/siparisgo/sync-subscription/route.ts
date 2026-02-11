@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
+
+// Internal API için rate limit (dakikada 10 istek)
+const syncRateLimitConfig = {
+    maxRequests: 10,
+    windowMs: 60 * 1000 // 1 dakika
+};
 
 // SiparisGO veritabanına bağlanmak için ayrı client
 // NOT: Bu environment variable'lar .env.local'a eklenmelidir
@@ -33,9 +40,24 @@ function getSubscriptionType(durationMonths: number): string {
 // POST: SiparisGO cafes tablosunu güncelle
 export async function POST(request: NextRequest) {
     try {
+        const clientIP = getClientIP(request);
+
+        // ======== RATE LIMITING (Brute-force koruması) ========
+        const rateLimit = checkRateLimit(`siparisgo-sync:${clientIP}`, syncRateLimitConfig);
+
+        if (!rateLimit.success) {
+            console.warn(`[SiparisGO Sync] Rate limit exceeded for IP: ${clientIP}`);
+            return NextResponse.json(
+                { error: 'Too many requests' },
+                { status: 429 }
+            );
+        }
+        // ======================================================
+
         // API key kontrolü (güvenlik için)
         const apiKey = request.headers.get('x-api-key');
         if (apiKey !== process.env.INTERNAL_API_KEY) {
+            console.warn(`[SiparisGO Sync] Invalid API key attempt from IP: ${clientIP}`);
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }

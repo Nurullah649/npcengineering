@@ -23,7 +23,9 @@ export async function sendMail({ to, subject, text, html, from, replyTo }: SendM
             pass: process.env.SMTP_PASS,
         },
         tls: {
-            rejectUnauthorized: false
+            // Production'da sertifika doğrulaması AÇIK olmalı
+            // Self-signed sertifika kullanılıyorsa env'den kapatılabilir
+            rejectUnauthorized: process.env.SMTP_SKIP_TLS_VERIFY !== 'true'
         }
     });
 

@@ -1,8 +1,48 @@
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
 
-export async function POST(request: Request) {
+// Admin kontrolü için user session'a bak
+async function checkAdminAuth() {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll(); },
+                setAll() { },
+            },
+        }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { isAdmin: false, userId: null };
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    return {
+        isAdmin: profile?.role === 'admin',
+        userId: user.id
+    };
+}
+
+export async function POST(request: NextRequest) {
     try {
+        // ======== ADMIN AUTH KONTROLÜ ========
+        const { isAdmin, userId } = await checkAdminAuth();
+
+        if (!isAdmin) {
+            console.warn(`[fix-subscription-data] Unauthorized access attempt by: ${userId || 'anonymous'}`);
+            return NextResponse.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
+        }
+        // =====================================
+
         const { subscription_id } = await request.json()
 
         if (!subscription_id) {

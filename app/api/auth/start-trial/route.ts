@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
+
+// Trial için sıkı rate limit (saatte 2 istek)
+const trialRateLimitConfig = {
+    maxRequests: 2,
+    windowMs: 60 * 60 * 1000 // 1 saat
+};
 
 export async function POST(request: NextRequest) {
     try {
+        // ======== RATE LIMITING (Trial Abuse Koruması) ========
+        const clientIP = getClientIP(request);
+        const rateLimit = checkRateLimit(`start-trial:${clientIP}`, trialRateLimitConfig);
+
+        if (!rateLimit.success) {
+            return NextResponse.json(
+                { error: 'Çok fazla deneme isteği. Lütfen bekleyin.' },
+                {
+                    status: 429,
+                    headers: { 'Retry-After': Math.ceil(rateLimit.resetIn / 1000).toString() }
+                }
+            );
+        }
+        // ======================================================
+
         const cookieStore = await cookies();
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,

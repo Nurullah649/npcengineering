@@ -9,9 +9,24 @@ const supabaseAdmin = createClient(
 );
 
 export async function GET(request: Request) {
-    // Verify Cron Secret (Optional but recommended, skipping for now as per simple request)
-    // const authHeader = request.headers.get('authorization');
-    // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) { ... }
+    // ======== CRON AUTHENTICATION ========
+    // Vercel Cron veya manuel tetikleme için kimlik doğrulama
+    const authHeader = request.headers.get('authorization');
+    const vercelCronHeader = request.headers.get('x-vercel-cron');
+
+    // Vercel Cron otomatik olarak bu header'ı ekler
+    // Manuel tetikleme için CRON_SECRET gerekli
+    const isVercelCron = vercelCronHeader === '1';
+    const isValidBearerToken = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+
+    if (!isVercelCron && !isValidBearerToken) {
+        console.warn('[Cron] Unauthorized access attempt');
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+    // =====================================
 
     try {
         // 1. Find active trial subscriptions expiring in <= 2 days
@@ -76,7 +91,7 @@ export async function GET(request: Request) {
                 pass: process.env.SMTP_PASS,
             },
             tls: {
-                rejectUnauthorized: false
+                rejectUnauthorized: process.env.SMTP_SKIP_TLS_VERIFY !== 'true'
             }
         });
 

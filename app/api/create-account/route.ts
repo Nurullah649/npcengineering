@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { z } from 'zod';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 
 // Validation schema
 const createAccountSchema = z.object({
@@ -14,6 +15,12 @@ const createAccountSchema = z.object({
     orderId: z.string().min(1, 'Sipariş ID gerekli'),
     product: z.string().optional(),
 });
+
+// Account creation için rate limit (5 dakikada 3 istek)
+const accountRateLimitConfig = {
+    maxRequests: 3,
+    windowMs: 5 * 60 * 1000 // 5 dakika
+};
 
 // Server-side Supabase client
 async function getSupabaseClient() {
@@ -38,6 +45,21 @@ async function getSupabaseClient() {
  */
 export async function POST(request: NextRequest) {
     try {
+        // ======== RATE LIMITING ========
+        const clientIP = getClientIP(request);
+        const rateLimit = checkRateLimit(`create-account:${clientIP}`, accountRateLimitConfig);
+
+        if (!rateLimit.success) {
+            return NextResponse.json(
+                { error: 'Çok fazla hesap oluşturma isteği. Lütfen bekleyin.' },
+                {
+                    status: 429,
+                    headers: { 'Retry-After': Math.ceil(rateLimit.resetIn / 1000).toString() }
+                }
+            );
+        }
+        // ================================
+
         const supabase = await getSupabaseClient();
 
         // Kullanıcı oturumunu kontrol et

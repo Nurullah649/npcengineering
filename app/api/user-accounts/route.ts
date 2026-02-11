@@ -110,10 +110,20 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST: Yeni hesap bilgisi oluştur (admin veya sistem tarafından)
+// POST: Yeni hesap bilgisi oluştur (sadece admin veya hesap sahibi tarafından)
 export async function POST(request: NextRequest) {
     try {
         const supabase = await getSupabaseClient();
+
+        // ======== AUTH KONTROLÜ ========
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Giriş yapmanız gerekiyor' },
+                { status: 401 }
+            );
+        }
 
         const body = await request.json();
         const { subscription_id, user_id, product_id, username, password, additional_info } = body;
@@ -124,6 +134,26 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
+
+        // Kullanıcı sadece kendi hesabına ekleme yapabilir
+        // Admin ise diğer kullanıcılara da ekleyebilir
+        if (user_id !== user.id) {
+            // Admin kontrolü
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.role !== 'admin') {
+                console.warn(`[User Accounts] Unauthorized POST attempt by ${user.id} for user ${user_id}`);
+                return NextResponse.json(
+                    { error: 'Bu işlem için yetkiniz yok' },
+                    { status: 403 }
+                );
+            }
+        }
+        // ================================
 
         // NOT: Gerçek uygulamada şifre şifrelenmeli (AES-256)
         // Şimdilik basit bir base64 encoding kullanıyoruz
